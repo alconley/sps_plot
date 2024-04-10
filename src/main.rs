@@ -15,7 +15,7 @@ fn main() -> eframe::Result<()> {
     eframe::run_native(
         "Run Time Estimator",
         native_options,
-        Box::new(|cc| Box::new(sps_runtime_estimator::SPSRunTimeApp::new(cc, false))),
+        Box::new(|cc| Box::new(sps_plot::SPSPlotApp::new(cc, false))),
     )
 }
 
@@ -32,7 +32,7 @@ fn main() {
             .start(
                 "the_canvas_id", // hardcode it
                 web_options,
-                Box::new(|cc| Box::new(sps_runtime_estimator::SPSRunTimeApp::new(cc, false))),
+                Box::new(|cc| Box::new(sps_plot::SPSPlotApp::new(cc, false))),
             )
             .await
             .expect("failed to start eframe");

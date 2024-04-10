@@ -1,6 +1,8 @@
-# Runtime Estimator
+# SPS Plot
 
-Simple gui to estimate the time to run given the cross section, beam current & proton number, target thickness & molar mass, solid angle of the spectrograph, and the number of counts you want in the peak.
+This tool is intended to be used for guiding the settings of the SPS to show specific states on the focal plane detector. The user gives the program reaction information, and the program runs through the kinematics to calculate the energies of ejecta into the the SESPS. To evaluate different states, the program scrapes a list of levels from NNDC, and these levels are then passed on to the reaction handler. These levels are then shown on the screen with labels. The labels can be modified to show either the excitation energy of the state, the kinetic energy of the ejectile, or the focal plane z-offset for a state. Note that since levels are obtained from NNDC, SPSPlot requires an internet connection.
+
+This tool is a simplier version of a tool located in [SPSPy](https://github.com/gwm17/spspy) and written in rust.
 
 ### Running locally
 
@@ -16,4 +18,4 @@ On Fedora Rawhide you need to run:
 
 `dnf install clang clang-devel clang-tools-extra libxkbcommon-devel pkg-config openssl-devel libxcb-devel gtk3-devel atk fontconfig-devel`
 
-To view online visit https://alconley.github.io/sps_runtime_estimator
+To view online visit https://alconley.github.io/sps_plot (NOT YET IMPLEMENTED I NEED THE MASTER CODER (GORDAN) TO HELP :) )
