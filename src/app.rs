@@ -38,7 +38,7 @@ pub struct Reaction {
     pub rho_values: Vec<(f64, f64)>,
 }
 
-#[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct SPSPlotApp {
     sps_angle: f64,
     beam_energy: f64,
@@ -51,9 +51,25 @@ pub struct SPSPlotApp {
     window: bool,
 }
 
-impl SPSPlotApp {
-    pub fn new(_cc: &eframe::CreationContext<'_>, window: bool) -> Self {
+impl Default for SPSPlotApp {
+    fn default() -> Self {
         Self {
+            sps_angle: 35.0,
+            beam_energy: 16.0,
+            magnetic_field: 8.7,
+            rho_min: 69.0,
+            rho_max: 87.0,
+            reactions: Vec::new(),
+            reaction_data: HashMap::new(),
+            is_loading: false,
+            window: false,
+        }
+    }
+}
+
+impl SPSPlotApp {
+    pub fn new(cc: &eframe::CreationContext<'_>, window: bool) -> Self {
+        let mut app = Self {
             sps_angle: 35.0,     // degree
             beam_energy: 16.0,   // MeV
             magnetic_field: 8.7, // kG
@@ -63,7 +79,13 @@ impl SPSPlotApp {
             reaction_data: HashMap::new(),
             is_loading: false,
             window,
+        };
+
+        if let Some(storage) = cc.storage {
+            app = eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
         }
+
+        app
     }
 
     fn sps_settings_ui(&mut self, ui: &mut egui::Ui) {
@@ -302,7 +324,7 @@ impl SPSPlotApp {
                 / (ejectile.mass + resid.mass);
 
             let ke1 = term1 + (term1 * term1 + term2).sqrt();
-            let ke2 = term1 - (term1 * term1 + term2).sqrt(); // spspy: spsplot has these as the same? copilot thought the second should be subtracted
+            let ke2 = term1 - (term1 * term1 + term2).sqrt();
 
             let ejectile_energy = if ke1 > 0.0 { ke1 * ke1 } else { ke2 * ke2 };
 
@@ -406,6 +428,11 @@ impl SPSPlotApp {
 }
 
 impl App for SPSPlotApp {
+
+    fn save(&mut self, storage: &mut dyn eframe::Storage) {
+        eframe::set_value(storage, eframe::APP_KEY, self);
+    }
+
     fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
         
         if self.window {
@@ -416,6 +443,10 @@ impl App for SPSPlotApp {
                 });
         } else {
             egui::CentralPanel::default().show(ctx, |ui| {
+                ui.label("Reaction Data");
+                for (reaction, data) in &self.reaction_data {
+                    ui.label(format!("{}: {:?}", reaction, data));
+                }
                 self.ui(ui);
             });
         }
