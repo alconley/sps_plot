@@ -16,22 +16,14 @@ log = "0.4"
 serde = { version = "1", features = ["derive"] }
 
 egui_plot = { version = "0.27.2", features = ["serde"] }
-scraper = "0.18.1"
-regex = "1.10.3"
 
 # Conditional dependencies for native and wasm targets
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 env_logger = "0.10"
-reqwest = { version = "0.11.24", features = ["blocking", "json"] }
-tokio = { version = "1.37", features = ["full"] }
 rfd = "0.13"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
-web-sys = { version = "0.3", features = ["Window", "Request", "Response", "RequestInit", "RequestMode", "Response", "console"] }
-js-sys = "0.3"
-url = "2.2"
 
 # Add getrandom dependency with js feature for WASM
 [target.'cfg(target_arch = "wasm32")'.dependencies.getrandom]
@@ -46,10 +38,3 @@ opt-level = 2 # fast and small wasm
 opt-level = 2
 
 [patch.crates-io]
-# If you want to use the bleeding edge version of egui and eframe:
-# egui = { git = "https://github.com/emilk/egui", branch = "master" }
-# eframe = { git = "https://github.com/emilk/egui", branch = "master" }
-
-# If you fork https://github.com/emilk/egui you can test with:
-# egui = { path = "../egui/crates/egui" }
-# eframe = { path = "../egui/crates/eframe" }

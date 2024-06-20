@@ -29,7 +29,6 @@ impl ExcitationFetcher {
         }
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
     pub fn fetch_excitation_levels(&self, isotope: &str) {
         let rt = Runtime::new().unwrap();
         let excitation_levels_clone = Arc::clone(&self.excitation_levels);
@@ -52,7 +51,6 @@ impl ExcitationFetcher {
         });
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
     pub async fn get_excitations(&self, isotope: &str) -> Result<Vec<f64>, Box<dyn Error>> {
         // Asynchronously fetch the webpage content
         let url = format!("https://www.nndc.bnl.gov/nudat3/getdatasetClassic.jsp?nucleus={}&unc=nds", isotope);

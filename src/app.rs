@@ -7,9 +7,10 @@ use egui_plot::{Bar, BarChart, Legend, Orientation, Plot, PlotBounds, VLine};
 use std::collections::HashMap;
 use std::f64::consts::PI;
 
-use super::excitation_fetchor::ExcitationFetcher;
+// use super::excitation_fetchor::ExcitationFetcher;
 // use super::nuclear_data::{MassMap, NuclearData};
 
+use super::excitation_levels_nndc::ExcitationLevels;
 use super::nuclear_data_amdc_2016::NuclearData;
 
 const C: f64 = 299792458.0; // Speed of light in m/s
@@ -49,7 +50,6 @@ pub struct SPSPlotApp {
     rho_max: f64,
     reactions: Vec<Reaction>,
     reaction_data: HashMap<String, Vec<(f64, f64)>>,
-    is_loading: bool,
     window: bool,
 }
 
@@ -63,7 +63,6 @@ impl Default for SPSPlotApp {
             rho_max: 87.0,
             reactions: Vec::new(),
             reaction_data: HashMap::new(),
-            is_loading: false,
             window: false,
         }
     }
@@ -79,7 +78,6 @@ impl SPSPlotApp {
             rho_max: 87.0,
             reactions: Vec::new(),
             reaction_data: HashMap::new(),
-            is_loading: false,
             window,
         };
 
@@ -211,14 +209,17 @@ impl SPSPlotApp {
     }
 
     fn populate_reaction_data(reaction: &mut Reaction) {
-
         reaction.resid_z = reaction.target_z + reaction.projectile_z - reaction.ejectile_z;
         reaction.resid_a = reaction.target_a + reaction.projectile_a - reaction.ejectile_a;
 
-        reaction.target_data = NuclearData::get_data(reaction.target_z as u32, reaction.target_a as u32);
-        reaction.projectile_data = NuclearData::get_data(reaction.projectile_z as u32, reaction.projectile_a as u32);
-        reaction.ejectile_data = NuclearData::get_data(reaction.ejectile_z as u32, reaction.ejectile_a as u32);
-        reaction.resid_data = NuclearData::get_data(reaction.resid_z as u32, reaction.resid_a as u32);
+        reaction.target_data =
+            NuclearData::get_data(reaction.target_z as u32, reaction.target_a as u32);
+        reaction.projectile_data =
+            NuclearData::get_data(reaction.projectile_z as u32, reaction.projectile_a as u32);
+        reaction.ejectile_data =
+            NuclearData::get_data(reaction.ejectile_z as u32, reaction.ejectile_a as u32);
+        reaction.resid_data =
+            NuclearData::get_data(reaction.resid_z as u32, reaction.resid_a as u32);
 
         reaction.reaction_identifier = format!(
             "{}({},{}){}",
@@ -255,19 +256,15 @@ impl SPSPlotApp {
             );
         }
 
-        // Using an async block, note that this requires an executor to run the block synchronously
-        let fetcher = ExcitationFetcher::new();
-        fetcher.fetch_excitation_levels(isotope);
+        let all_levels = ExcitationLevels::new();
+        let isotope_levels = all_levels.get(isotope);
 
-        let levels_lock = fetcher.excitation_levels.lock().unwrap();
-        let error_lock = fetcher.error_message.lock().unwrap();
-
-        if let Some(levels) = &*levels_lock {
+        if let Some(levels) = isotope_levels {
             info!("Fetched excitation levels: {:?}", levels);
             reaction.excitation_levels = levels.clone();
             // return levels.clone();
-        } else if let Some(error) = &*error_lock {
-            log::error!("Error fetching excitation levels: {}", error);
+        } else {
+            log::error!("Error fetching excitation levels for: {}", isotope);
         }
     }
 
@@ -411,13 +408,11 @@ impl SPSPlotApp {
 }
 
 impl App for SPSPlotApp {
-
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         eframe::set_value(storage, eframe::APP_KEY, self);
     }
 
     fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
-        
         if self.window {
             egui::Window::new("SPS Plot")
                 .max_height(900.0)
