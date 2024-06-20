@@ -1148,10 +1148,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fe9006bed769170c11f845cf00c7c1e9092aeb3f268e007c3e760ac68008070f"
 dependencies = [
  "cfg-if",
- "js-sys",
  "libc",
  "wasi",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -2123,7 +2121,6 @@ dependencies = [
  "egui",
  "egui_plot",
  "env_logger",
- "getrandom",
  "log",
  "rfd",
  "serde",

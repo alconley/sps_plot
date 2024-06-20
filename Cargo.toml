@@ -25,11 +25,6 @@ rfd = "0.14.1"
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen-futures = "0.4"
 
-# Add getrandom dependency with js feature for WASM
-[target.'cfg(target_arch = "wasm32")'.dependencies.getrandom]
-version = "0.2.11"
-features = ["js"]
-
 [profile.release]
 opt-level = 2 # fast and small wasm
 
