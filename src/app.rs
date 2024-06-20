@@ -7,9 +7,6 @@ use egui_plot::{Bar, BarChart, Legend, Orientation, Plot, PlotBounds, VLine};
 use std::collections::HashMap;
 use std::f64::consts::PI;
 
-// use super::excitation_fetchor::ExcitationFetcher;
-// use super::nuclear_data::{MassMap, NuclearData};
-
 use super::excitation_levels_nndc::ExcitationLevels;
 use super::nuclear_data_amdc_2016::NuclearData;
 
@@ -37,6 +34,8 @@ pub struct Reaction {
     pub reaction_identifier: String,
 
     pub excitation_levels: Vec<f64>,
+    pub add_excitation_level: f64,
+    pub additional_excitation_levels: Vec<f64>,
 
     pub rho_values: Vec<(f64, f64)>,
 }
@@ -60,7 +59,7 @@ impl Default for SPSPlotApp {
             beam_energy: 16.0,
             magnetic_field: 8.7,
             rho_min: 69.0,
-            rho_max: 83.0,
+            rho_max: 87.0,
             reactions: Vec::new(),
             reaction_data: HashMap::new(),
             window: false,
@@ -89,11 +88,15 @@ impl SPSPlotApp {
     }
 
     fn sps_settings_ui(&mut self, ui: &mut egui::Ui) {
-        ui.label(
-            RichText::new("SE-SPS Settings")
-                .color(Color32::LIGHT_BLUE)
-                .size(18.0),
-        );
+        ui.horizontal(|ui| {
+            egui::global_dark_light_mode_switch(ui);
+
+            ui.label(
+                RichText::new("SE-SPS Settings")
+                    .color(Color32::LIGHT_BLUE)
+                    .size(18.0),
+            );
+        });
 
         ui.horizontal(|ui| {
             ui.label("SPS Angle: ")
@@ -157,55 +160,98 @@ impl SPSPlotApp {
             }
         });
 
-        ui.separator();
+        egui::ScrollArea::both().show(ui, |ui| {
+            ui.separator();
 
-        let mut index_to_remove: Option<usize> = None;
+            let mut index_to_remove: Option<usize> = None;
 
-        for (index, reaction) in self.reactions.iter_mut().enumerate() {
-            ui.horizontal(|ui| {
-                // let reaction = &mut self.reactions;
-                ui.label(format!("Reaction {}", index));
+            for (index, reaction) in self.reactions.iter_mut().enumerate() {
+                ui.horizontal(|ui| {
+                    ui.label(format!("Reaction {}", index));
 
-                ui.separator();
+                    ui.separator();
 
-                if ui.button("-").clicked() {
-                    index_to_remove = Some(index);
-                }
+                    if ui.button("-").clicked() {
+                        index_to_remove = Some(index);
+                    }
 
-                ui.separator();
+                    ui.separator();
 
-                ui.label("Target: ");
-                ui.add(egui::DragValue::new(&mut reaction.target_z).prefix("Z: "));
-                ui.add(egui::DragValue::new(&mut reaction.target_a).prefix("A: "));
+                    ui.label("Target: ");
+                    ui.add(egui::DragValue::new(&mut reaction.target_z).prefix("Z: "));
+                    ui.add(egui::DragValue::new(&mut reaction.target_a).prefix("A: "));
 
-                ui.separator();
+                    ui.separator();
 
-                ui.label("Projectile: ");
-                ui.add(egui::DragValue::new(&mut reaction.projectile_z).prefix("Z: "));
-                ui.add(egui::DragValue::new(&mut reaction.projectile_a).prefix("A: "));
+                    ui.label("Projectile: ");
+                    ui.add(egui::DragValue::new(&mut reaction.projectile_z).prefix("Z: "));
+                    ui.add(egui::DragValue::new(&mut reaction.projectile_a).prefix("A: "));
 
-                ui.separator();
+                    ui.separator();
 
-                ui.label("Ejectile: ");
-                ui.add(egui::DragValue::new(&mut reaction.ejectile_z).prefix("Z: "));
-                ui.add(egui::DragValue::new(&mut reaction.ejectile_a).prefix("A: "));
+                    ui.label("Ejectile: ");
+                    ui.add(egui::DragValue::new(&mut reaction.ejectile_z).prefix("Z: "));
+                    ui.add(egui::DragValue::new(&mut reaction.ejectile_a).prefix("A: "));
 
-                ui.separator();
+                    ui.separator();
 
-                ui.label(reaction.reaction_identifier.to_string());
+                    ui.label(reaction.reaction_identifier.to_string());
 
-                if ui.button("Get Reaction").clicked() {
-                    Self::populate_reaction_data(reaction);
-                    Self::fetch_excitation_levels(reaction);
-                }
+                    if ui.button("Get Reaction").clicked() {
+                        Self::populate_reaction_data(reaction);
+                        Self::fetch_excitation_levels(reaction);
+                    }
 
-                ui.separator();
-            });
-        }
+                    ui.separator();
 
-        if let Some(index) = index_to_remove {
-            self.reactions.remove(index);
-        }
+                    ui.horizontal(|ui| {
+                        ui.add(
+                            egui::DragValue::new(&mut reaction.add_excitation_level)
+                                .prefix("Custom Excited State: ")
+                                .suffix(" MeV")
+                                .speed(0.1)
+                                .clamp_range(0.0..=f64::MAX),
+                        );
+                        if ui.button("+").clicked() {
+                            reaction
+                                .additional_excitation_levels
+                                .push(reaction.add_excitation_level);
+                            log::info!(
+                                "Added new excitation level: {}",
+                                reaction.add_excitation_level
+                            );
+                        }
+                    });
+
+                    let mut to_remove: Option<usize> = None;
+                    if !reaction.additional_excitation_levels.is_empty() {
+                        ui.collapsing(
+                            format!("User Added Levels for {}", reaction.reaction_identifier),
+                            |ui| {
+                                for (index, level) in
+                                    reaction.additional_excitation_levels.iter().enumerate()
+                                {
+                                    ui.horizontal(|ui| {
+                                        ui.label(format!("Energy: {} MeV", level));
+                                        if ui.button("-").clicked() {
+                                            to_remove = Some(index);
+                                        }
+                                    });
+                                }
+
+                                if let Some(index) = to_remove {
+                                    reaction.additional_excitation_levels.remove(index);
+                                }
+                            },
+                        );
+                    }
+                });
+            }
+
+            if let Some(index) = index_to_remove {
+                self.reactions.remove(index);
+            }
+        });
     }
 
     fn populate_reaction_data(reaction: &mut Reaction) {
@@ -261,6 +307,12 @@ impl SPSPlotApp {
         if let Some(levels) = excitation_levels.get(isotope) {
             log::info!("Excitation levels for {}: {:?}", isotope, levels);
             reaction.excitation_levels = levels;
+
+            log::info!(
+                "Excitation levels for {}: {:?}",
+                isotope,
+                reaction.excitation_levels.clone()
+            );
         } else {
             log::error!("No excitation levels found for {}.", isotope);
         }
@@ -287,7 +339,16 @@ impl SPSPlotApp {
 
         let q_value = target.mass + projectile.mass - ejectile.mass - resid.mass;
 
-        for excitation in &reaction.excitation_levels {
+        let mut levels = reaction.excitation_levels.clone();
+        for level in reaction.additional_excitation_levels.iter() {
+            levels.push(*level);
+        }
+
+        log::info!("Excitation levels: {:?}", levels);
+
+        for excitation in levels {
+            // for excitation in &reaction.excitation_levels {
+
             let reaction_q_value = q_value - excitation;
             // let beam_reaction_energy = self.beam_energy; // could put energy loss through target here
             let beam_reaction_energy = beam_energy; // could put energy loss through target here
@@ -312,7 +373,7 @@ impl SPSPlotApp {
             let rho = qbrho / (magnetic_field * ejectile.z as f64);
             info!("Excitation: {}, rho: {}", excitation, rho);
 
-            reaction.rho_values.push((*excitation, rho));
+            reaction.rho_values.push((excitation, rho));
         }
     }
 
@@ -359,16 +420,21 @@ impl SPSPlotApp {
             .legend(Legend::default());
 
         let colors = [
-            Color32::LIGHT_BLUE,
-            Color32::LIGHT_GREEN,
-            Color32::LIGHT_RED,
-            Color32::LIGHT_YELLOW,
-            Color32::LIGHT_GRAY,
+            Color32::from_rgb(120, 47, 64), // go noles!
+            Color32::from_rgb(206, 184, 136),
             Color32::BLUE,
             Color32::GREEN,
-            Color32::RED,
             Color32::YELLOW,
-            Color32::GRAY,
+            Color32::BROWN,
+            Color32::DARK_RED,
+            Color32::RED,
+            Color32::LIGHT_RED,
+            Color32::LIGHT_YELLOW,
+            Color32::KHAKI,
+            Color32::DARK_GREEN,
+            Color32::LIGHT_GREEN,
+            Color32::DARK_BLUE,
+            Color32::LIGHT_BLUE,
         ];
 
         plot.show(ui, |plot_ui| {
@@ -392,12 +458,16 @@ impl SPSPlotApp {
 
     fn ui(&mut self, ui: &mut egui::Ui) {
         egui::TopBottomPanel::top("sps_plot_top_panel").show_inside(ui, |ui| {
-            self.sps_settings_ui(ui);
+            egui::ScrollArea::horizontal().show(ui, |ui| {
+                self.sps_settings_ui(ui);
+            });
         });
 
-        egui::TopBottomPanel::bottom("sps_plot_bottom_panel").show_inside(ui, |ui| {
-            self.reaction_ui(ui);
-        });
+        egui::TopBottomPanel::bottom("sps_plot_bottom_panel")
+            .resizable(true)
+            .show_inside(ui, |ui| {
+                self.reaction_ui(ui);
+            });
 
         egui::CentralPanel::default().show_inside(ui, |ui| {
             self.plot(ui);
