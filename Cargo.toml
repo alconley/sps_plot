@@ -19,8 +19,8 @@ egui_plot = { version = "0.27.2", features = ["serde"] }
 
 # Conditional dependencies for native and wasm targets
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-env_logger = "0.10"
-rfd = "0.13"
+env_logger = "0.11.3"
+rfd = "0.14.1"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen-futures = "0.4"

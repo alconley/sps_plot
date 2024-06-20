@@ -60,7 +60,7 @@ impl Default for SPSPlotApp {
             beam_energy: 16.0,
             magnetic_field: 8.7,
             rho_min: 69.0,
-            rho_max: 87.0,
+            rho_max: 83.0,
             reactions: Vec::new(),
             reaction_data: HashMap::new(),
             window: false,
@@ -256,14 +256,13 @@ impl SPSPlotApp {
             );
         }
 
-        let all_levels = ExcitationLevels::new();
-        let isotope_levels = all_levels.get(isotope);
+        let excitation_levels = ExcitationLevels::new();
 
-        if let Some(levels) = isotope_levels {
-            info!("Fetched excitation levels: {:?}", levels);
+        if let Some(levels) = excitation_levels.get(isotope) {
+            log::info!("Excitation levels for {}: {:?}", isotope, levels);
             reaction.excitation_levels = levels;
         } else {
-            log::error!("Error fetching excitation levels for: {}", isotope);
+            log::error!("No excitation levels found for {}.", isotope);
         }
     }
 
@@ -303,7 +302,7 @@ impl SPSPlotApp {
                 / (ejectile.mass + resid.mass);
 
             let ke1 = term1 + (term1 * term1 + term2).sqrt();
-            let ke2 = term1 - (term1 * term1 + term2).sqrt();
+            let ke2 = term1 + (term1 * term1 + term2).sqrt();
 
             let ejectile_energy = if ke1 > 0.0 { ke1 * ke1 } else { ke2 * ke2 };
 
