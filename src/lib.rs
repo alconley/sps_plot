@@ -2,5 +2,5 @@
 
 mod app;
 pub use app::SPSPlotApp;
-mod nuclear_data_amdc_2016;
 mod excitation_levels_nndc;
+mod nuclear_data_amdc_2016;

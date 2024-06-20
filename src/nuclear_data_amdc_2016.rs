@@ -1,4 +1,3 @@
-
 const U2MEV: f64 = 931.49410242;
 const ELECTRON_MASS: f64 = 0.51099895000; //MeV
 
@@ -30,7 +29,8 @@ impl NuclearData {
             if i.z == z && i.a == a {
                 data.z = i.z;
                 data.a = i.a;
-                data.mass = (i.atomic_mass_base as f64 + i.atomic_mass_micro_u / 1_000_000.0) * U2MEV
+                data.mass = (i.atomic_mass_base as f64 + i.atomic_mass_micro_u / 1_000_000.0)
+                    * U2MEV
                     - (i.z as f64) * ELECTRON_MASS;
                 data.isotope = format!("{}{}", i.a, i.el);
                 data.element = i.el.to_string();
@@ -77,19 +77,20 @@ const fn new_isotope(
 }
 
 // from the amdc_2016 evaluation
+#[rustfmt::skip]
 const ISOTOPES: [Isotope; 2498] = [
-    new_isotope(1, 0, 1, "n", 1, 008664.91582),
-    new_isotope(0, 1, 1, "H", 1, 007825.03224),
-    new_isotope(1, 1, 2, "H", 2, 014101.77811),
-    new_isotope(2, 1, 3, "H", 3, 016049.28199),
-    new_isotope(1, 2, 3, "He", 3, 016029.32265),
-    new_isotope(3, 1, 4, "H", 4, 026431.868),
-    new_isotope(2, 2, 4, "He", 4, 002603.25413),
-    new_isotope(1, 3, 4, "Li", 4, 027185.562),
-    new_isotope(4, 1, 5, "H", 5, 035311.493),
-    new_isotope(3, 2, 5, "He", 5, 012057.224),
-    new_isotope(2, 3, 5, "Li", 5, 012537.800),
-    new_isotope(5, 1, 6, "H", 6, 044955.437),
+new_isotope(1, 0, 1, "n", 1, 008664.91582),
+new_isotope(0, 1, 1, "H", 1, 007825.03224),
+new_isotope(1, 1, 2, "H", 2, 014101.77811),
+new_isotope(2, 1, 3, "H", 3, 016049.28199),
+new_isotope(1, 2, 3, "He", 3, 016029.32265),
+new_isotope(3, 1, 4, "H", 4, 026431.868),
+new_isotope(2, 2, 4, "He", 4, 002603.25413),
+new_isotope(1, 3, 4, "Li", 4, 027185.562),
+new_isotope(4, 1, 5, "H", 5, 035311.493),
+new_isotope(3, 2, 5, "He", 5, 012057.224),
+new_isotope(2, 3, 5, "Li", 5, 012537.800),
+new_isotope(5, 1, 6, "H", 6, 044955.437),
 new_isotope(4, 2, 6, "He", 6, 018885.891),
 new_isotope(3, 3, 6, "Li", 6, 015122.88742),
 new_isotope(2, 4, 6, "Be", 6, 019726.409),

@@ -1,6 +1,5 @@
-
 pub struct ExcitationLevels {
-    pub isotopes:Vec<(&'static str, Vec<f32>)>,
+    pub isotopes: Vec<(&'static str, Vec<f32>)>,
 }
 
 impl ExcitationLevels {
@@ -17,6 +16,7 @@ impl ExcitationLevels {
     }
 }
 
+#[rustfmt::skip]
 pub fn excitation_levels_nndc() ->  Vec<(&'static str, Vec<f32>)> {
     vec![
    ("1n", vec![]),
