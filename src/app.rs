@@ -261,8 +261,7 @@ impl SPSPlotApp {
 
         if let Some(levels) = isotope_levels {
             info!("Fetched excitation levels: {:?}", levels);
-            reaction.excitation_levels = levels.clone();
-            // return levels.clone();
+            reaction.excitation_levels = levels;
         } else {
             log::error!("Error fetching excitation levels for: {}", isotope);
         }
@@ -421,7 +420,6 @@ impl App for SPSPlotApp {
                 });
         } else {
             egui::CentralPanel::default().show(ctx, |ui| {
-                ui.label("Reaction Data");
                 for (reaction, data) in &self.reaction_data {
                     ui.label(format!("{}: {:?}", reaction, data));
                 }
