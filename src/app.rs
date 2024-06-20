@@ -8,7 +8,9 @@ use std::collections::HashMap;
 use std::f64::consts::PI;
 
 use super::excitation_fetchor::ExcitationFetcher;
-use super::nuclear_data::{MassMap, NuclearData};
+// use super::nuclear_data::{MassMap, NuclearData};
+
+use super::nuclear_data_amdc_2016::NuclearData;
 
 const C: f64 = 299792458.0; // Speed of light in m/s
 const QBRHO2P: f64 = 1.0E-9 * C; // Converts qbrho to momentum (p) (kG*cm -> MeV/c)
@@ -209,33 +211,14 @@ impl SPSPlotApp {
     }
 
     fn populate_reaction_data(reaction: &mut Reaction) {
-        let mass_map = match MassMap::new() {
-            Ok(map) => map,
-            Err(e) => {
-                log::error!("Failed to initialize MassMap: {}", e);
-                MassMap::default()
-            }
-        };
-
-        reaction.target_data = mass_map
-            .get_data(&(reaction.target_z as u32), &(reaction.target_a as u32))
-            .cloned();
-        reaction.projectile_data = mass_map
-            .get_data(
-                &(reaction.projectile_z as u32),
-                &(reaction.projectile_a as u32),
-            )
-            .cloned();
-        reaction.ejectile_data = mass_map
-            .get_data(&(reaction.ejectile_z as u32), &(reaction.ejectile_a as u32))
-            .cloned();
 
         reaction.resid_z = reaction.target_z + reaction.projectile_z - reaction.ejectile_z;
         reaction.resid_a = reaction.target_a + reaction.projectile_a - reaction.ejectile_a;
 
-        reaction.resid_data = mass_map
-            .get_data(&(reaction.resid_z as u32), &(reaction.resid_a as u32))
-            .cloned();
+        reaction.target_data = NuclearData::get_data(reaction.target_z as u32, reaction.target_a as u32);
+        reaction.projectile_data = NuclearData::get_data(reaction.projectile_z as u32, reaction.projectile_a as u32);
+        reaction.ejectile_data = NuclearData::get_data(reaction.ejectile_z as u32, reaction.ejectile_a as u32);
+        reaction.resid_data = NuclearData::get_data(reaction.resid_z as u32, reaction.resid_a as u32);
 
         reaction.reaction_identifier = format!(
             "{}({},{}){}",

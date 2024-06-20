@@ -2477,6 +2477,7 @@ dependencies = [
  "scraper",
  "serde",
  "tokio",
+ "url",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",

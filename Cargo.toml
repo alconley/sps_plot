@@ -18,7 +18,6 @@ serde = { version = "1", features = ["derive"] }
 egui_plot = { version = "0.27.2", features = ["serde"] }
 scraper = "0.18.1"
 regex = "1.10.3"
-nuclide = "0.2.1"
 
 # Conditional dependencies for native and wasm targets
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
@@ -32,6 +31,7 @@ wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 web-sys = { version = "0.3", features = ["Window", "Request", "Response", "RequestInit", "RequestMode", "Response", "console"] }
 js-sys = "0.3"
+url = "2.2"
 
 # Add getrandom dependency with js feature for WASM
 [target.'cfg(target_arch = "wasm32")'.dependencies.getrandom]

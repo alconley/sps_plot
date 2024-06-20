@@ -1,61 +1,11 @@
-
-const U2MEV: f64 = 931.49410242;
-const ELECTRON_MASS: f64 = 0.51099895000; //MeV
-
-#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
-pub struct NuclearData {
+#[derive(Clone)]
+pub struct Isotope {
+    _n: u32,
     pub z: u32,
     pub a: u32,
-    pub mass: f64,
-    pub isotope: String,
-    pub element: String,
-}
-
-impl Default for NuclearData {
-    fn default() -> Self {
-        NuclearData {
-            z: 0,
-            a: 0,
-            mass: 0.0,
-            isotope: String::from("None"),
-            element: String::from("None"),
-        }
-    }
-}
-
-impl NuclearData {
-    pub fn get_data(z: u32, a: u32) -> Option<NuclearData> {
-        let mut data = NuclearData::default();
-        for i in ISOTOPES.iter() {
-            if i.z == z && i.a == a {
-                data.z = i.z;
-                data.a = i.a;
-                data.mass = (i.atomic_mass_base as f64 + i.atomic_mass_micro_u / 1_000_000.0) * U2MEV
-                    - (i.z as f64) * ELECTRON_MASS;
-                data.isotope = format!("{}{}", i.a, i.el);
-                data.element = i.el.to_string();
-
-                log::info!("Z: {}", data.z);
-                log::info!("A: {}", data.a);
-                log::info!("Found element: {}", data.element);
-                log::info!("Found isotope: {}", data.isotope);
-                log::info!("Found mass: {}", data.mass);
-
-                break;
-            }
-        }
-        Some(data)
-    }
-}
-
-#[derive(Clone)]
-struct Isotope {
-    _n: u32,
-    z: u32,
-    a: u32,
-    el: &'static str,
-    atomic_mass_base: i32,
-    atomic_mass_micro_u: f64,
+    pub el: &'static str,
+    _atomic_mass_base: i32,
+    _atomic_mass_micro_u: f64,
 }
 
 const fn new_isotope(
@@ -63,21 +13,22 @@ const fn new_isotope(
     z: u32,
     a: u32,
     el: &'static str,
-    atomic_mass_base: i32,
-    atomic_mass_micro_u: f64,
+    _atomic_mass_base: i32,
+    _atomic_mass_micro_u: f64,
 ) -> Isotope {
     Isotope {
         _n,
         z,
         a,
         el,
-        atomic_mass_base,
-        atomic_mass_micro_u,
+        _atomic_mass_base,
+        _atomic_mass_micro_u,
     }
 }
 
+// /* 
 // from the amdc_2016 evaluation
-const ISOTOPES: [Isotope; 2498] = [
+pub const ISOTOPES: [Isotope; 2498] = [
     new_isotope(1, 0, 1, "n", 1, 008664.91582),
     new_isotope(0, 1, 1, "H", 1, 007825.03224),
     new_isotope(1, 1, 2, "H", 2, 014101.77811),
@@ -2577,3 +2528,4 @@ new_isotope(58, 108, 266, "Hs", 266, 130045.252),
 new_isotope(59, 110, 269, "Ds", 269, 144751.021),
 new_isotope(60, 110, 270, "Ds", 270, 144583.090),
 ];
+// */
