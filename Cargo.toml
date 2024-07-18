@@ -16,6 +16,7 @@ log = "0.4"
 serde = { version = "1", features = ["derive"] }
 
 egui_plot = { version = "0.27.2", features = ["serde"] }
+egui_extras = "0.27.2"
 
 # Conditional dependencies for native and wasm targets
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

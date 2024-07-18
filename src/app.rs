@@ -1,7 +1,8 @@
 use log::info;
 
-use eframe::egui::{self, Color32, RichText, Stroke};
+use eframe::egui::{self, Color32, Stroke};
 use eframe::App;
+use egui_extras::{Column, TableBuilder};
 use egui_plot::{Bar, BarChart, Legend, Orientation, Plot, PlotBounds, VLine};
 
 use std::collections::HashMap;
@@ -38,220 +39,140 @@ pub struct Reaction {
     pub additional_excitation_levels: Vec<f64>,
 
     pub rho_values: Vec<(f64, f64)>,
+
+    pub color: Color32,
 }
 
-#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
-pub struct SPSPlotApp {
-    sps_angle: f64,
-    beam_energy: f64,
-    magnetic_field: f64,
-    rho_min: f64,
-    rho_max: f64,
-    reactions: Vec<Reaction>,
-    reaction_data: HashMap<String, Vec<(f64, f64)>>,
-    window: bool,
-}
-
-impl Default for SPSPlotApp {
-    fn default() -> Self {
-        Self {
-            sps_angle: 35.0,
-            beam_energy: 16.0,
-            magnetic_field: 8.7,
-            rho_min: 69.0,
-            rho_max: 87.0,
-            reactions: Vec::new(),
-            reaction_data: HashMap::new(),
-            window: false,
+impl Reaction {
+    pub fn new(color: egui::Color32) -> Self {
+        Reaction {
+            color,
+            ..Default::default()
         }
     }
-}
 
-impl SPSPlotApp {
-    pub fn new(cc: &eframe::CreationContext<'_>, window: bool) -> Self {
-        let mut app = Self {
-            sps_angle: 35.0,     // degree
-            beam_energy: 16.0,   // MeV
-            magnetic_field: 8.7, // kG
-            rho_min: 69.0,
-            rho_max: 87.0,
-            reactions: Vec::new(),
-            reaction_data: HashMap::new(),
-            window,
-        };
+    pub fn excitation_levels_ui(&mut self, ui: &mut egui::Ui, index: usize) {
+        egui::ScrollArea::vertical()
+            .id_source(format!("Reaction {} Scroll Area", index))
+            .show(ui, |ui| {
+                // ui.vertical(|ui| {
 
-        if let Some(storage) = cc.storage {
-            app = eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
-        }
-
-        app
-    }
-
-    fn sps_settings_ui(&mut self, ui: &mut egui::Ui) {
-        ui.horizontal(|ui| {
-            egui::global_dark_light_mode_switch(ui);
-
-            ui.label(
-                RichText::new("SE-SPS Settings")
-                    .color(Color32::LIGHT_BLUE)
-                    .size(18.0),
-            );
-        });
-
-        ui.horizontal(|ui| {
-            ui.label("SPS Angle: ")
-                .on_hover_text("SE-SPS's angle currently limited to 60°");
-            ui.add(
-                egui::DragValue::new(&mut self.sps_angle)
-                    .suffix("°")
-                    .clamp_range(0.0..=60.0),
-            );
-
-            ui.label("Beam Energy: ");
-            ui.add(
-                egui::DragValue::new(&mut self.beam_energy)
-                    .suffix(" MeV")
-                    .clamp_range(0.0..=f64::MAX),
-            );
-
-            ui.label("Magnetic Field: ");
-            ui.add(
-                egui::DragValue::new(&mut self.magnetic_field)
-                    .suffix(" kG")
-                    .clamp_range(0.0..=17.0),
-            );
-
-            ui.label("Rho Min: ")
-                .on_hover_text("SE-SPS Rho Min is usually 69.0");
-            ui.add(
-                egui::DragValue::new(&mut self.rho_min)
-                    .suffix(" cm")
-                    .clamp_range(0.0..=f64::MAX),
-            );
-
-            ui.label("Rho Max: ")
-                .on_hover_text("SE-SPS Rho Max is usually 87.0");
-            ui.add(
-                egui::DragValue::new(&mut self.rho_max)
-                    .suffix(" cm")
-                    .clamp_range(0.0..=f64::MAX),
-            );
-        });
-    }
-
-    fn reaction_ui(&mut self, ui: &mut egui::Ui) {
-        ui.horizontal(|ui| {
-            ui.label(
-                RichText::new("Reactions")
-                    .color(Color32::LIGHT_BLUE)
-                    .size(18.0),
-            );
-
-            ui.separator();
-
-            if ui.button("Calculate").clicked() {
-                self.calculate_rho_for_all_reactions();
-            }
-
-            ui.separator();
-
-            if ui.button("+").clicked() {
-                self.reactions.push(Reaction::default());
-            }
-        });
-
-        egui::ScrollArea::both().show(ui, |ui| {
-            ui.separator();
-
-            let mut index_to_remove: Option<usize> = None;
-
-            for (index, reaction) in self.reactions.iter_mut().enumerate() {
+                ui.label(self.reaction_identifier.clone());
                 ui.horizontal(|ui| {
-                    ui.label(format!("Reaction {}", index));
+                    ui.label("Color: ");
+                    ui.color_edit_button_srgba(&mut self.color);
+                });
+                ui.label("Excitation Levels");
+                ui.separator();
 
-                    ui.separator();
+                if self.excitation_levels.is_empty() {
+                    ui.label("None");
+                }
 
-                    if ui.button("-").clicked() {
-                        index_to_remove = Some(index);
-                    }
-
-                    ui.separator();
-
-                    ui.label("Target: ");
-                    ui.add(egui::DragValue::new(&mut reaction.target_z).prefix("Z: "));
-                    ui.add(egui::DragValue::new(&mut reaction.target_a).prefix("A: "));
-
-                    ui.separator();
-
-                    ui.label("Projectile: ");
-                    ui.add(egui::DragValue::new(&mut reaction.projectile_z).prefix("Z: "));
-                    ui.add(egui::DragValue::new(&mut reaction.projectile_a).prefix("A: "));
-
-                    ui.separator();
-
-                    ui.label("Ejectile: ");
-                    ui.add(egui::DragValue::new(&mut reaction.ejectile_z).prefix("Z: "));
-                    ui.add(egui::DragValue::new(&mut reaction.ejectile_a).prefix("A: "));
-
-                    ui.separator();
-
-                    ui.label(reaction.reaction_identifier.to_string());
-
-                    if ui.button("Get Reaction").clicked() {
-                        Self::populate_reaction_data(reaction);
-                        Self::fetch_excitation_levels(reaction);
-                    }
-
-                    ui.separator();
-
+                let mut to_remove_level: Option<usize> = None;
+                for (index, level) in self.excitation_levels.iter().enumerate() {
                     ui.horizontal(|ui| {
-                        ui.add(
-                            egui::DragValue::new(&mut reaction.add_excitation_level)
-                                .prefix("Custom Excited State: ")
-                                .suffix(" MeV")
-                                .speed(0.1)
-                                .clamp_range(0.0..=f64::MAX),
-                        );
-                        if ui.button("+").clicked() {
-                            reaction
-                                .additional_excitation_levels
-                                .push(reaction.add_excitation_level);
-                            log::info!(
-                                "Added new excitation level: {}",
-                                reaction.add_excitation_level
-                            );
+                        ui.label(format!("{}: {:.3} MeV", index, level));
+                        if ui.button("-").clicked() {
+                            to_remove_level = Some(index);
                         }
                     });
+                }
 
-                    let mut to_remove: Option<usize> = None;
-                    if !reaction.additional_excitation_levels.is_empty() {
-                        ui.collapsing(
-                            format!("User Added Levels for {}", reaction.reaction_identifier),
-                            |ui| {
-                                for (index, level) in
-                                    reaction.additional_excitation_levels.iter().enumerate()
-                                {
-                                    ui.horizontal(|ui| {
-                                        ui.label(format!("Energy: {} MeV", level));
-                                        if ui.button("-").clicked() {
-                                            to_remove = Some(index);
-                                        }
-                                    });
-                                }
+                if let Some(index) = to_remove_level {
+                    self.excitation_levels.remove(index);
+                }
 
-                                if let Some(index) = to_remove {
-                                    reaction.additional_excitation_levels.remove(index);
-                                }
-                            },
-                        );
+                ui.separator();
+
+                ui.label("Additional Levels");
+
+                ui.horizontal(|ui| {
+                    ui.add(
+                        egui::DragValue::new(&mut self.add_excitation_level)
+                            .prefix("Custom: ")
+                            .suffix(" MeV")
+                            .speed(0.1)
+                            .clamp_range(0.0..=f64::MAX),
+                    );
+                    if ui.button("+").clicked() {
+                        self.additional_excitation_levels
+                            .push(self.add_excitation_level);
+                        log::info!("Added new excitation level: {}", self.add_excitation_level);
                     }
                 });
-            }
 
-            if let Some(index) = index_to_remove {
-                self.reactions.remove(index);
-            }
-        });
+                let mut to_remove: Option<usize> = None;
+                if !self.additional_excitation_levels.is_empty() {
+                    for (index, level) in self.additional_excitation_levels.iter().enumerate() {
+                        ui.horizontal(|ui| {
+                            ui.label(format!("Energy: {} MeV", level));
+                            if ui.button("-").clicked() {
+                                to_remove = Some(index);
+                            }
+                        });
+                    }
+
+                    if let Some(index) = to_remove {
+                        self.additional_excitation_levels.remove(index);
+                    }
+                }
+                // });
+            });
+    }
+
+    pub fn settings_ui(&mut self, ui: &mut egui::Ui) {
+        ui.label("Target: ");
+        ui.add(egui::DragValue::new(&mut self.target_z).prefix("Z: "));
+        ui.add(egui::DragValue::new(&mut self.target_a).prefix("A: "));
+
+        ui.separator();
+
+        ui.label("Projectile: ");
+        ui.add(egui::DragValue::new(&mut self.projectile_z).prefix("Z: "));
+        ui.add(egui::DragValue::new(&mut self.projectile_a).prefix("A: "));
+
+        ui.separator();
+
+        ui.label("Ejectile: ");
+        ui.add(egui::DragValue::new(&mut self.ejectile_z).prefix("Z: "));
+        ui.add(egui::DragValue::new(&mut self.ejectile_a).prefix("A: "));
+
+        ui.separator();
+
+        ui.label(self.reaction_identifier.to_string());
+
+        if ui.button("Get Reaction").clicked() {
+            Self::populate_reaction_data(self);
+            Self::fetch_excitation_levels(self);
+        }
+    }
+
+    pub fn draw(&self, plot_ui: &mut egui_plot::PlotUi, y_offset: f64) {
+        let color = self.color;
+
+        let mut bars = Vec::new();
+        for (excitation, rho) in &self.rho_values {
+            let bar = Bar {
+                orientation: Orientation::Vertical,
+                argument: *rho,
+                value: 0.50,
+                bar_width: 0.01,
+                fill: color,
+                stroke: Stroke::new(1.0, color),
+                name: format!("E = {:.3} MeV\nrho = {:.3}\n", *excitation, *rho),
+                base_offset: Some(y_offset),
+            };
+
+            bars.push(bar);
+        }
+
+        let barchart = BarChart::new(bars)
+            .name(self.reaction_identifier.clone())
+            .color(color)
+            .highlight(true);
+
+        plot_ui.bar_chart(barchart);
     }
 
     fn populate_reaction_data(reaction: &mut Reaction) {
@@ -316,6 +237,179 @@ impl SPSPlotApp {
         } else {
             log::error!("No excitation levels found for {}.", isotope);
         }
+    }
+}
+
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+pub struct SPSPlotApp {
+    sps_angle: f64,
+    beam_energy: f64,
+    magnetic_field: f64,
+    rho_min: f64,
+    rho_max: f64,
+    reactions: Vec<Reaction>,
+    reaction_data: HashMap<String, Vec<(f64, f64)>>,
+    side_panel: bool,
+    window: bool,
+}
+
+impl Default for SPSPlotApp {
+    fn default() -> Self {
+        Self {
+            sps_angle: 35.0,
+            beam_energy: 16.0,
+            magnetic_field: 8.7,
+            rho_min: 69.0,
+            rho_max: 87.0,
+            reactions: Vec::new(),
+            reaction_data: HashMap::new(),
+            side_panel: false,
+            window: false,
+        }
+    }
+}
+
+impl SPSPlotApp {
+    pub fn new(cc: &eframe::CreationContext<'_>, window: bool) -> Self {
+        let mut app = Self {
+            sps_angle: 35.0,     // degree
+            beam_energy: 16.0,   // MeV
+            magnetic_field: 8.7, // kG
+            rho_min: 69.0,
+            rho_max: 87.0,
+            reactions: Vec::new(),
+            reaction_data: HashMap::new(),
+            side_panel: false,
+            window,
+        };
+
+        if let Some(storage) = cc.storage {
+            app = eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
+        }
+
+        app
+    }
+
+    fn sps_settings_ui(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            egui::global_dark_light_mode_switch(ui);
+
+            ui.heading("SE-SPS Settings");
+        });
+
+        ui.horizontal(|ui| {
+            ui.label("SPS Angle: ")
+                .on_hover_text("SE-SPS's angle currently limited to 60°");
+            ui.add(
+                egui::DragValue::new(&mut self.sps_angle)
+                    .suffix("°")
+                    .clamp_range(0.0..=60.0),
+            );
+
+            ui.label("Beam Energy: ");
+            ui.add(
+                egui::DragValue::new(&mut self.beam_energy)
+                    .suffix(" MeV")
+                    .clamp_range(0.0..=f64::MAX),
+            );
+
+            ui.label("Magnetic Field: ");
+            ui.add(
+                egui::DragValue::new(&mut self.magnetic_field)
+                    .suffix(" kG")
+                    .clamp_range(0.0..=17.0),
+            );
+
+            ui.label("Rho Min: ")
+                .on_hover_text("SE-SPS Rho Min is usually 69.0");
+            ui.add(
+                egui::DragValue::new(&mut self.rho_min)
+                    .suffix(" cm")
+                    .clamp_range(0.0..=f64::MAX),
+            );
+
+            ui.label("Rho Max: ")
+                .on_hover_text("SE-SPS Rho Max is usually 87.0");
+            ui.add(
+                egui::DragValue::new(&mut self.rho_max)
+                    .suffix(" cm")
+                    .clamp_range(0.0..=f64::MAX),
+            );
+
+            ui.separator();
+
+            if ui.button("Calculate").clicked() {
+                self.calculate_rho_for_all_reactions();
+            }
+
+            ui.separator();
+
+            ui.checkbox(&mut self.side_panel, "Show Exciation Levels");
+        });
+    }
+
+    fn reactions_ui(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            ui.heading("Reactions");
+
+            ui.separator();
+
+            if ui.button("Calculate").clicked() {
+                self.calculate_rho_for_all_reactions();
+            }
+
+            ui.separator();
+
+            if ui.button("+").clicked() {
+                let colors = [
+                    Color32::from_rgb(120, 47, 64), // go noles!
+                    Color32::from_rgb(206, 184, 136),
+                    Color32::BLUE,
+                    Color32::GREEN,
+                    Color32::YELLOW,
+                    Color32::BROWN,
+                    Color32::DARK_RED,
+                    Color32::RED,
+                    Color32::LIGHT_RED,
+                    Color32::LIGHT_YELLOW,
+                    Color32::KHAKI,
+                    Color32::DARK_GREEN,
+                    Color32::LIGHT_GREEN,
+                    Color32::DARK_BLUE,
+                    Color32::LIGHT_BLUE,
+                ];
+
+                // change the default color to be random
+                let index = self.reactions.len();
+                let color = colors[index % colors.len()];
+
+                self.reactions.push(Reaction::new(color));
+            }
+        });
+
+        egui::ScrollArea::both().show(ui, |ui| {
+            ui.separator();
+
+            let mut index_to_remove: Option<usize> = None;
+
+            for (index, reaction) in self.reactions.iter_mut().enumerate() {
+                ui.horizontal(|ui| {
+                    ui.label(format!("Reaction {}", index));
+
+                    ui.separator();
+
+                    if ui.button("-").clicked() {
+                        index_to_remove = Some(index);
+                    }
+
+                    reaction.settings_ui(ui);
+                });
+            }
+
+            if let Some(index) = index_to_remove {
+                self.reactions.remove(index);
+            }
+        });
     }
 
     fn excitation_level_to_rho(
@@ -388,27 +482,19 @@ impl SPSPlotApp {
         }
     }
 
-    fn rho_to_barchart(reaction: &mut Reaction, y_value: f64, color: Color32) -> BarChart {
-        let mut bars = Vec::new();
-        for (excitation, rho) in &reaction.rho_values {
-            let bar = Bar {
-                orientation: Orientation::Vertical,
-                argument: *rho,
-                value: 0.50,
-                bar_width: 0.01,
-                fill: color,
-                stroke: Stroke::new(1.0, color),
-                name: format!("E = {:.3} MeV\nrho = {:.3}\n", *excitation, *rho),
-                base_offset: Some(y_value),
-            };
-
-            bars.push(bar);
-        }
-
-        BarChart::new(bars)
-            .name(reaction.reaction_identifier.clone())
-            .color(color)
-            .highlight(true)
+    fn excitation_levels_side_ui(&mut self, ui: &mut egui::Ui) {
+        let height = ui.available_height();
+        TableBuilder::new(ui)
+            .columns(Column::auto().resizable(true), self.reactions.len())
+            .body(|mut body| {
+                body.row(height, |mut row| {
+                    for (index, reaction) in &mut self.reactions.iter_mut().enumerate() {
+                        row.col(|ui| {
+                            reaction.excitation_levels_ui(ui, index);
+                        });
+                    }
+                });
+            });
     }
 
     fn plot(&mut self, ui: &mut egui::Ui) {
@@ -419,34 +505,14 @@ impl SPSPlotApp {
             .allow_scroll(false)
             .legend(Legend::default());
 
-        let colors = [
-            Color32::from_rgb(120, 47, 64), // go noles!
-            Color32::from_rgb(206, 184, 136),
-            Color32::BLUE,
-            Color32::GREEN,
-            Color32::YELLOW,
-            Color32::BROWN,
-            Color32::DARK_RED,
-            Color32::RED,
-            Color32::LIGHT_RED,
-            Color32::LIGHT_YELLOW,
-            Color32::KHAKI,
-            Color32::DARK_GREEN,
-            Color32::LIGHT_GREEN,
-            Color32::DARK_BLUE,
-            Color32::LIGHT_BLUE,
-        ];
-
         plot.show(ui, |plot_ui| {
             // plots the rho values
             plot_ui.vline(VLine::new(self.rho_min).color(Color32::RED));
             plot_ui.vline(VLine::new(self.rho_max).color(Color32::RED));
 
             for (index, reaction) in self.reactions.iter_mut().enumerate() {
-                let color = colors[index % colors.len()];
                 let y_value = index as f64 + 0.25;
-                let barchart = Self::rho_to_barchart(reaction, y_value, color);
-                plot_ui.bar_chart(barchart);
+                reaction.draw(plot_ui, y_value);
             }
 
             plot_ui.set_plot_bounds(PlotBounds::from_min_max(
@@ -466,8 +532,16 @@ impl SPSPlotApp {
         egui::TopBottomPanel::bottom("sps_plot_bottom_panel")
             .resizable(true)
             .show_inside(ui, |ui| {
-                self.reaction_ui(ui);
+                self.reactions_ui(ui);
             });
+
+        egui::SidePanel::left("sps_plot_side_panel").show_animated_inside(
+            ui,
+            self.side_panel,
+            |ui| {
+                self.excitation_levels_side_ui(ui);
+            },
+        );
 
         egui::CentralPanel::default().show_inside(ui, |ui| {
             self.plot(ui);

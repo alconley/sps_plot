@@ -13,7 +13,7 @@ fn main() -> eframe::Result<()> {
         ..Default::default()
     };
     eframe::run_native(
-        "Run Time Estimator",
+        "SPS Plot",
         native_options,
         Box::new(|cc| Box::new(sps_plot::SPSPlotApp::new(cc, false))),
     )
