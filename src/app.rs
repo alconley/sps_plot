@@ -522,6 +522,92 @@ impl SPSPlotApp {
         });
     }
 
+    // pub fn find_p_t_ground_state_matches(&mut self) {
+    //     use crate::nuclear_data_amdc_2016::{NuclearData, excitation_levels_nndc};
+
+    //     // Clear any previous reactions.
+    //     self.reactions.clear();
+
+    //     // (p,t) reaction settings.
+    //     let projectile_z = 1;
+    //     let projectile_a = 1;
+    //     let ejectile_z = 1;
+    //     let ejectile_a = 3;
+
+    //     // Predefined set of colors.
+    //     let colors = [
+    //         Color32::from_rgb(120, 47, 64),
+    //         Color32::from_rgb(206, 184, 136),
+    //         Color32::BLUE,
+    //         Color32::GREEN,
+    //         Color32::YELLOW,
+    //         Color32::BROWN,
+    //         Color32::DARK_RED,
+    //         Color32::RED,
+    //         Color32::LIGHT_RED,
+    //         Color32::LIGHT_YELLOW,
+    //         Color32::KHAKI,
+    //         Color32::DARK_GREEN,
+    //         Color32::LIGHT_GREEN,
+    //         Color32::DARK_BLUE,
+    //         Color32::LIGHT_BLUE,
+    //     ];
+    //     let mut color_index = 0;
+
+    //     // Get the HashMap from your nuclear data function.
+    //     let isotopes = excitation_levels_nndc();
+
+    //     // Loop through each isotope.
+    //     for (&(_n, z), &(a, _el, _atomic_mass_base, _atomic_mass_micro_u)) in isotopes.iter() {
+    //         if a < z {
+    //             continue;
+    //         }
+    //         if let Some(target_data) = NuclearData::get_data(z, a) {
+    //             // Create a new reaction with a different color.
+    //             let mut reaction = Reaction::new(colors[color_index % colors.len()]);
+    //             color_index += 1;
+
+    //             // Set target and (p,t) projectile/ejectile values.
+    //             reaction.target_z = target_data.z as i32;
+    //             reaction.target_a = target_data.a as i32;
+    //             reaction.projectile_z = projectile_z;
+    //             reaction.projectile_a = projectile_a;
+    //             reaction.ejectile_z = ejectile_z;
+    //             reaction.ejectile_a = ejectile_a;
+
+    //             // Populate the rest of the nuclear data.
+    //             Reaction::populate_reaction_data(&mut reaction);
+
+    //             // Skip if we don't have residual nuclear data.
+    //             if reaction.resid_data.is_none() {
+    //                 log::warn!("Skipping target {} due to missing residual data.", target_data.isotope);
+    //                 continue;
+    //             }
+
+    //             // Fetch excitation levels without overriding them.
+    //             Reaction::fetch_excitation_levels(&mut reaction);
+
+    //             // Calculate rho values for every excitation level.
+    //             Self::excitation_level_to_rho(
+    //                 &mut reaction,
+    //                 self.beam_energy,
+    //                 self.magnetic_field,
+    //                 self.sps_angle,
+    //             );
+
+    //             // Check if the ground state (0.0 MeV) is present and its rho is within range.
+    //             if reaction.rho_values.iter().any(|(ex, rho)|
+    //                 (*ex - 0.0).abs() < 1e-6 && *rho >= self.rho_min && *rho <= self.rho_max
+    //             ) {
+    //                 log::info!("✅ Added reaction: {} | ground state rho in range", reaction.reaction_identifier);
+    //                 self.reactions.push(reaction);
+    //             } else {
+    //                 log::info!("❌ Skipped reaction: {} | ground state rho not in range", reaction.reaction_identifier);
+    //             }
+    //         }
+    //     }
+    // }
+
     fn ui(&mut self, ui: &mut egui::Ui) {
         egui::TopBottomPanel::top("sps_plot_top_panel").show_inside(ui, |ui| {
             egui::ScrollArea::horizontal().show(ui, |ui| {
@@ -533,6 +619,10 @@ impl SPSPlotApp {
             .resizable(true)
             .show_inside(ui, |ui| {
                 self.reactions_ui(ui);
+
+                // if ui.button("Find p-t Ground State Matches").clicked() {
+                //     self.find_p_t_ground_state_matches();
+                // }
             });
 
         egui::SidePanel::left("sps_plot_side_panel").show_animated_inside(
