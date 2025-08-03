@@ -227,15 +227,20 @@ impl Reaction {
 
         if let Some(levels) = excitation_levels.get(isotope) {
             log::info!("Excitation levels for {}: {:?}", isotope, levels);
-            reaction.excitation_levels = levels;
-
-            log::info!(
-                "Excitation levels for {}: {:?}",
-                isotope,
-                reaction.excitation_levels.clone()
-            );
-        } else {
-            log::error!("No excitation levels found for {}.", isotope);
+            // check the last level, if it is less than the one before it remove it
+            if let Some(last_level) = levels.last() {
+                if levels.len() > 1 && last_level < &levels[levels.len() - 2] {
+                    log::warn!(
+                        "Last excitation level {} is less than the one before it, removing it.",
+                        last_level
+                    );
+                    reaction.excitation_levels = levels[..levels.len() - 1].to_vec();
+                } else {
+                    reaction.excitation_levels = levels.clone();
+                }
+            } else {
+                log::warn!("No excitation levels found for {}.", isotope);
+            }
         }
     }
 }
