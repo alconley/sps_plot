@@ -35,7 +35,7 @@ impl NuclearData {
             data.a = *a;
             data.mass = (*atomic_mass_base as f64 + atomic_mass_micro_u / 1_000_000.0) * U2MEV
                 - (z as f64) * ELECTRON_MASS;
-            data.isotope = format!("{}{}", a, el);
+            data.isotope = format!("{a}{el}");
             data.element = el.to_string();
 
             log::info!("Z: {}", data.z);

@@ -53,7 +53,7 @@ impl Reaction {
 
     pub fn excitation_levels_ui(&mut self, ui: &mut egui::Ui, index: usize) {
         egui::ScrollArea::vertical()
-            .id_source(format!("Reaction {} Scroll Area", index))
+            .id_source(format!("Reaction {index} Scroll Area"))
             .show(ui, |ui| {
                 // ui.vertical(|ui| {
 
@@ -72,7 +72,7 @@ impl Reaction {
                 let mut to_remove_level: Option<usize> = None;
                 for (index, level) in self.excitation_levels.iter().enumerate() {
                     ui.horizontal(|ui| {
-                        ui.label(format!("{}: {:.3} MeV", index, level));
+                        ui.label(format!("{index}: {level:.3} MeV"));
                         if ui.button("-").clicked() {
                             to_remove_level = Some(index);
                         }
@@ -106,7 +106,7 @@ impl Reaction {
                 if !self.additional_excitation_levels.is_empty() {
                     for (index, level) in self.additional_excitation_levels.iter().enumerate() {
                         ui.horizontal(|ui| {
-                            ui.label(format!("Energy: {} MeV", level));
+                            ui.label(format!("Energy: {level} MeV"));
                             if ui.button("-").clicked() {
                                 to_remove = Some(index);
                             }
@@ -231,15 +231,14 @@ impl Reaction {
             if let Some(last_level) = levels.last() {
                 if levels.len() > 1 && last_level < &levels[levels.len() - 2] {
                     log::warn!(
-                        "Last excitation level {} is less than the one before it, removing it.",
-                        last_level
+                        "Last excitation level {last_level} is less than the one before it, removing it."
                     );
                     reaction.excitation_levels = levels[..levels.len() - 1].to_vec();
                 } else {
                     reaction.excitation_levels = levels.clone();
                 }
             } else {
-                log::warn!("No excitation levels found for {}.", isotope);
+                log::warn!("No excitation levels found for {isotope}.");
             }
         }
     }
@@ -399,7 +398,7 @@ impl SPSPlotApp {
 
             for (index, reaction) in self.reactions.iter_mut().enumerate() {
                 ui.horizontal(|ui| {
-                    ui.label(format!("Reaction {}", index));
+                    ui.label(format!("Reaction {index}"));
 
                     ui.separator();
 
@@ -659,7 +658,7 @@ impl App for SPSPlotApp {
         } else {
             egui::CentralPanel::default().show(ctx, |ui| {
                 for (reaction, data) in &self.reaction_data {
-                    ui.label(format!("{}: {:?}", reaction, data));
+                    ui.label(format!("{reaction}: {data:?}"));
                 }
                 self.ui(ui);
             });
