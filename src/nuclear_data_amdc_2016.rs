@@ -14,7 +14,7 @@ pub struct NuclearData {
 
 impl Default for NuclearData {
     fn default() -> Self {
-        NuclearData {
+        Self {
             z: 0,
             a: 0,
             mass: 0.0,
@@ -25,9 +25,9 @@ impl Default for NuclearData {
 }
 
 impl NuclearData {
-    pub fn get_data(z: u32, a: u32) -> Option<NuclearData> {
+    pub fn get_data(z: u32, a: u32) -> Option<Self> {
         let n = a - z; // neutron number
-        let mut data = NuclearData::default();
+        let mut data = Self::default();
         let isotopes = excitation_levels_nndc();
 
         if let Some((a, el, atomic_mass_base, atomic_mass_micro_u)) = isotopes.get(&(n, z)) {
@@ -36,7 +36,7 @@ impl NuclearData {
             data.mass = (*atomic_mass_base as f64 + atomic_mass_micro_u / 1_000_000.0) * U2MEV
                 - (z as f64) * ELECTRON_MASS;
             data.isotope = format!("{a}{el}");
-            data.element = el.to_string();
+            data.element = (*el).to_owned();
 
             log::info!("Z: {}", data.z);
             log::info!("A: {}", data.a);
@@ -51,10 +51,11 @@ impl NuclearData {
 }
 
 // I am sorry if anyone looks at this... i hate it too
-// i couldnt figure out how to get a text file when compiling to the web
+// i couldnt figure out how to get a text file when compiling to the web, I also could not parse a web site from a web app
 
 // key=(neutron, proton) with value=(atomic number, element, atomic_mass_base, atomic_mass_micro_u)
 #[rustfmt::skip]
+#[allow(clippy::all)]
 pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, f64)> {
     let mut map = HashMap::new();
 
@@ -76,7 +77,7 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((5, 2), (7, "He", 7, 027990.654));
    map.insert((4, 3), (7, "Li", 7, 016003.43666));
    map.insert((3, 4), (7, "Be", 7, 016928.717));
-   map.insert((2, 5), (7, "B", 7, 029712.000));
+   map.insert((2, 5), (7, "B", 7, 29_712.0));
    map.insert((6, 2), (8, "He", 8, 033934.390));
    map.insert((5, 3), (8, "Li", 8, 022486.246));
    map.insert((4, 4), (8, "Be", 8, 005305.102));
@@ -101,7 +102,7 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((9, 3), (12, "Li", 12, 052613.941));
    map.insert((8, 4), (12, "Be", 12, 026922.083));
    map.insert((7, 5), (12, "B", 12, 014352.638));
-   map.insert((6, 6), (12, "C", 12, 000000.0));
+   map.insert((6, 6), (12, "C", 12, 0.0));
    map.insert((5, 7), (12, "N", 12, 018613.182));
    map.insert((4, 8), (12, "O", 12, 034261.747));
    map.insert((10, 3), (13, "Li", 13, 061171.503));
@@ -136,7 +137,7 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((9, 8), (17, "O", 16, 999131.75664));
    map.insert((8, 9), (17, "F", 17, 002095.238));
    map.insert((7, 10), (17, "Ne", 17, 017713.959));
-   map.insert((6, 11), (17, "Na", 17, 037760.000));
+   map.insert((6, 11), (17, "Na", 17, 37_760.0));
    map.insert((13, 5), (18, "B", 18, 055601.682));
    map.insert((12, 6), (18, "C", 18, 026751.932));
    map.insert((11, 7), (18, "N", 18, 014077.565));
@@ -144,7 +145,7 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((9, 9), (18, "F", 18, 000937.325));
    map.insert((8, 10), (18, "Ne", 18, 005708.693));
    map.insert((7, 11), (18, "Na", 18, 026879.386));
-   map.insert((14, 5), (19, "B", 19, 064166.000));
+   map.insert((14, 5), (19, "B", 19, 64_166.0));
    map.insert((13, 6), (19, "C", 19, 034797.596));
    map.insert((12, 7), (19, "N", 19, 017022.419));
    map.insert((11, 8), (19, "O", 19, 003577.970));
@@ -172,14 +173,14 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((12, 10), (22, "Ne", 21, 991385.109));
    map.insert((11, 11), (22, "Na", 21, 994437.418));
    map.insert((10, 12), (22, "Mg", 21, 999570.654));
-   map.insert((16, 7), (23, "N", 23, 039421.000));
+   map.insert((16, 7), (23, "N", 23, 39_421.0));
    map.insert((15, 8), (23, "O", 23, 015696.686));
    map.insert((14, 9), (23, "F", 23, 003526.874));
    map.insert((13, 10), (23, "Ne", 22, 994466.900));
    map.insert((12, 11), (23, "Na", 22, 989769.28199));
    map.insert((11, 12), (23, "Mg", 22, 994123.941));
    map.insert((10, 13), (23, "Al", 23, 007244.351));
-   map.insert((16, 8), (24, "O", 24, 019861.000));
+   map.insert((16, 8), (24, "O", 24, 19_861.0));
    map.insert((15, 9), (24, "F", 24, 008099.370));
    map.insert((14, 10), (24, "Ne", 23, 993610.645));
    map.insert((13, 11), (24, "Na", 23, 990963.011));
@@ -200,7 +201,7 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((14, 12), (26, "Mg", 25, 982592.971));
    map.insert((13, 13), (26, "Al", 25, 986891.863));
    map.insert((12, 14), (26, "Si", 25, 992333.804));
-   map.insert((18, 9), (27, "F", 27, 027322.000));
+   map.insert((18, 9), (27, "F", 27, 27_322.0));
    map.insert((17, 10), (27, "Ne", 27, 007569.462));
    map.insert((16, 11), (27, "Na", 26, 994076.408));
    map.insert((15, 12), (27, "Mg", 26, 984340.628));
@@ -215,8 +216,8 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((14, 14), (28, "Si", 27, 976926.53499));
    map.insert((13, 15), (28, "P", 27, 992326.585));
    map.insert((12, 16), (28, "S", 28, 004372.766));
-   map.insert((20, 9), (29, "F", 29, 043103.000));
-   map.insert((19, 10), (29, "Ne", 29, 019753.000));
+   map.insert((20, 9), (29, "F", 29, 43_103.0));
+   map.insert((19, 10), (29, "Ne", 29, 19_753.0));
    map.insert((18, 11), (29, "Na", 29, 002877.092));
    map.insert((17, 12), (29, "Mg", 28, 988617.393));
    map.insert((16, 13), (29, "Al", 28, 980453.164));
@@ -248,7 +249,7 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((16, 16), (32, "S", 31, 972071.17443));
    map.insert((15, 17), (32, "Cl", 31, 985684.637));
    map.insert((14, 18), (32, "Ar", 31, 997637.826));
-   map.insert((22, 11), (33, "Na", 33, 025529.000));
+   map.insert((22, 11), (33, "Na", 33, 25_529.0));
    map.insert((21, 12), (33, "Mg", 33, 005327.245));
    map.insert((20, 13), (33, "Al", 32, 990877.687));
    map.insert((19, 14), (33, "Si", 32, 977976.964));
@@ -256,7 +257,7 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((17, 16), (33, "S", 32, 971458.90985));
    map.insert((16, 17), (33, "Cl", 32, 977451.989));
    map.insert((15, 18), (33, "Ar", 32, 989925.547));
-   map.insert((23, 11), (34, "Na", 34, 034010.000));
+   map.insert((23, 11), (34, "Na", 34, 34_010.0));
    map.insert((22, 12), (34, "Mg", 34, 008935.481));
    map.insert((21, 13), (34, "Al", 33, 996779.057));
    map.insert((20, 14), (34, "Si", 33, 978575.437));
@@ -264,7 +265,7 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((18, 16), (34, "S", 33, 967867.012));
    map.insert((17, 17), (34, "Cl", 33, 973762.491));
    map.insert((16, 18), (34, "Ar", 33, 980270.093));
-   map.insert((23, 12), (35, "Mg", 35, 016790.000));
+   map.insert((23, 12), (35, "Mg", 35, 16_790.0));
    map.insert((22, 13), (35, "Al", 34, 999759.817));
    map.insert((21, 14), (35, "Si", 34, 984550.134));
    map.insert((20, 15), (35, "P", 34, 973314.053));
@@ -272,8 +273,8 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((18, 17), (35, "Cl", 34, 968852.694));
    map.insert((17, 18), (35, "Ar", 34, 975257.721));
    map.insert((16, 19), (35, "K", 34, 988005.407));
-   map.insert((24, 12), (36, "Mg", 36, 021879.000));
-   map.insert((23, 13), (36, "Al", 36, 006388.000));
+   map.insert((24, 12), (36, "Mg", 36, 21_879.0));
+   map.insert((23, 13), (36, "Al", 36, 6_388.0));
    map.insert((22, 14), (36, "Si", 35, 986649.271));
    map.insert((21, 15), (36, "P", 35, 978259.619));
    map.insert((20, 16), (36, "S", 35, 967080.699));
@@ -282,7 +283,7 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((17, 19), (36, "K", 35, 981302.010));
    map.insert((16, 20), (36, "Ca", 35, 993074.406));
    map.insert((25, 12), (37, "Mg", 37, 030286.265));
-   map.insert((24, 13), (37, "Al", 37, 010531.000));
+   map.insert((24, 13), (37, "Al", 37, 10_531.0));
    map.insert((23, 14), (37, "Si", 36, 992945.191));
    map.insert((22, 15), (37, "P", 36, 979606.956));
    map.insert((21, 16), (37, "S", 36, 971125.507));
@@ -290,7 +291,7 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((19, 18), (37, "Ar", 36, 966776.314));
    map.insert((18, 19), (37, "K", 36, 973375.889));
    map.insert((17, 20), (37, "Ca", 36, 985897.852));
-   map.insert((25, 13), (38, "Al", 38, 017402.000));
+   map.insert((25, 13), (38, "Al", 38, 17_402.0));
    map.insert((24, 14), (38, "Si", 37, 995523.000));
    map.insert((23, 15), (38, "P", 37, 984303.105));
    map.insert((22, 16), (38, "S", 37, 971163.310));
@@ -298,7 +299,7 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((20, 18), (38, "Ar", 37, 962732.104));
    map.insert((19, 19), (38, "K", 37, 969081.116));
    map.insert((18, 20), (38, "Ca", 37, 976319.226));
-   map.insert((25, 14), (39, "Si", 39, 002491.000));
+   map.insert((25, 14), (39, "Si", 39, 2_491.0));
    map.insert((24, 15), (39, "P", 38, 986285.865));
    map.insert((23, 16), (39, "S", 38, 975133.852));
    map.insert((22, 17), (39, "Cl", 38, 968008.162));
@@ -306,7 +307,7 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((20, 19), (39, "K", 38, 963706.48661));
    map.insert((19, 20), (39, "Ca", 38, 970710.813));
    map.insert((18, 21), (39, "Sc", 38, 984784.970));
-   map.insert((26, 14), (40, "Si", 40, 005829.000));
+   map.insert((26, 14), (40, "Si", 40, 5_829.0));
    map.insert((25, 15), (40, "P", 39, 991288.865));
    map.insert((24, 16), (40, "S", 39, 975482.562));
    map.insert((23, 17), (40, "Cl", 39, 970415.469));
@@ -315,7 +316,7 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((20, 20), (40, "Ca", 39, 962590.865));
    map.insert((19, 21), (40, "Sc", 39, 977967.292));
    map.insert((18, 22), (40, "Ti", 39, 990498.721));
-   map.insert((27, 14), (41, "Si", 41, 013011.000));
+   map.insert((27, 14), (41, "Si", 41, 13_011.0));
    map.insert((26, 15), (41, "P", 40, 994654.000));
    map.insert((25, 16), (41, "S", 40, 979593.451));
    map.insert((24, 17), (41, "Cl", 40, 970684.525));
@@ -324,7 +325,7 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((21, 20), (41, "Ca", 40, 962277.921));
    map.insert((20, 21), (41, "Sc", 40, 969251.104));
    map.insert((19, 22), (41, "Ti", 40, 983148.000));
-   map.insert((27, 15), (42, "P", 42, 001084.000));
+   map.insert((27, 15), (42, "P", 42, 1_084.0));
    map.insert((26, 16), (42, "S", 41, 981065.100));
    map.insert((25, 17), (42, "Cl", 41, 973342.000));
    map.insert((24, 18), (42, "Ar", 41, 963045.736));
@@ -332,7 +333,7 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((22, 20), (42, "Ca", 41, 958617.828));
    map.insert((21, 21), (42, "Sc", 41, 965516.522));
    map.insert((20, 22), (42, "Ti", 41, 973049.022));
-   map.insert((28, 15), (43, "P", 43, 005024.000));
+   map.insert((28, 15), (43, "P", 43, 5_024.0));
    map.insert((27, 16), (43, "S", 42, 986907.635));
    map.insert((26, 17), (43, "Cl", 42, 974063.700));
    map.insert((25, 18), (43, "Ar", 42, 965636.055));
@@ -2238,7 +2239,7 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((123, 89), (212, "Ac", 212, 007812.501));
    map.insert((122, 90), (212, "Th", 212, 013001.487));
    map.insert((121, 91), (212, "Pa", 212, 023181.425));
-   map.insert((132, 81), (213, "Tl", 213, 001915.000));
+   map.insert((132, 81), (213, "Tl", 213, 1_915.0));
    map.insert((131, 82), (213, "Pb", 212, 996560.867));
    map.insert((130, 83), (213, "Bi", 212, 994383.608));
    map.insert((129, 84), (213, "Po", 212, 992857.083));
@@ -2280,7 +2281,7 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((126, 90), (216, "Th", 216, 011055.714));
    map.insert((125, 91), (216, "Pa", 216, 019108.242));
    map.insert((124, 92), (216, "U ", 216, 024762.747));
-   map.insert((134, 83), (217, "Bi", 217, 009372.000));
+   map.insert((134, 83), (217, "Bi", 217, 9_372.0));
    map.insert((133, 84), (217, "Po", 217, 006316.216));
    map.insert((132, 85), (217, "At", 217, 004717.835));
    map.insert((131, 86), (217, "Rn", 217, 003927.562));
@@ -2289,7 +2290,7 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((128, 89), (217, "Ac", 217, 009343.777));
    map.insert((127, 90), (217, "Th", 217, 013103.444));
    map.insert((126, 91), (217, "Pa", 217, 018323.692));
-   map.insert((135, 83), (218, "Bi", 218, 014188.000));
+   map.insert((135, 83), (218, "Bi", 218, 14_188.0));
    map.insert((134, 84), (218, "Po", 218, 008971.502));
    map.insert((133, 85), (218, "At", 218, 008693.735));
    map.insert((132, 86), (218, "Rn", 218, 005601.052));
@@ -2299,7 +2300,7 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((128, 90), (218, "Th", 218, 013276.242));
    map.insert((127, 91), (218, "Pa", 218, 020057.853));
    map.insert((126, 92), (218, "U ", 218, 023504.829));
-   map.insert((135, 84), (219, "Po", 219, 013614.000));
+   map.insert((135, 84), (219, "Po", 219, 13_614.0));
    map.insert((134, 85), (219, "At", 219, 011160.647));
    map.insert((133, 86), (219, "Rn", 219, 009478.753));
    map.insert((132, 87), (219, "Fr", 219, 009251.553));
@@ -2309,15 +2310,15 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((128, 91), (219, "Pa", 219, 019903.650));
    map.insert((127, 92), (219, "U ", 219, 024999.161));
    map.insert((126, 93), (219, "Np", 219, 031623.021));
-   map.insert((136, 84), (220, "Po", 220, 016386.000));
-   map.insert((135, 85), (220, "At", 220, 015433.000));
+   map.insert((136, 84), (220, "Po", 220, 16_386.0));
+   map.insert((135, 85), (220, "At", 220, 15_433.0));
    map.insert((134, 86), (220, "Rn", 220, 011392.534));
    map.insert((133, 87), (220, "Fr", 220, 012326.778));
    map.insert((132, 88), (220, "Ra", 220, 011025.562));
    map.insert((131, 89), (220, "Ac", 220, 014754.450));
    map.insert((130, 90), (220, "Th", 220, 015747.926));
-   map.insert((137, 84), (221, "Po", 221, 021228.000));
-   map.insert((136, 85), (221, "At", 221, 018017.000));
+   map.insert((137, 84), (221, "Po", 221, 21_228.0));
+   map.insert((136, 85), (221, "At", 221, 18_017.0));
    map.insert((135, 86), (221, "Rn", 221, 015535.709));
    map.insert((134, 87), (221, "Fr", 221, 014253.757));
    map.insert((133, 88), (221, "Ra", 221, 013917.224));
@@ -2325,15 +2326,15 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((131, 90), (221, "Th", 221, 018186.236));
    map.insert((130, 91), (221, "Pa", 221, 021874.846));
    map.insert((129, 92), (221, "U ", 221, 026323.299));
-   map.insert((138, 84), (222, "Po", 222, 024140.000));
-   map.insert((137, 85), (222, "At", 222, 022494.000));
+   map.insert((138, 84), (222, "Po", 222, 24_140.0));
+   map.insert((137, 85), (222, "At", 222, 22_494.0));
    map.insert((136, 86), (222, "Rn", 222, 017576.286));
    map.insert((135, 87), (222, "Fr", 222, 017582.620));
    map.insert((134, 88), (222, "Ra", 222, 015373.355));
    map.insert((133, 89), (222, "Ac", 222, 017843.887));
    map.insert((132, 90), (222, "Th", 222, 018468.300));
    map.insert((130, 92), (222, "U ", 222, 026057.953));
-   map.insert((138, 85), (223, "At", 223, 025151.000));
+   map.insert((138, 85), (223, "At", 223, 25_151.0));
    map.insert((137, 86), (223, "Rn", 223, 021889.285));
    map.insert((136, 87), (223, "Fr", 223, 019734.313));
    map.insert((135, 88), (223, "Ra", 223, 018500.719));
@@ -2341,7 +2342,7 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((133, 90), (223, "Th", 223, 020811.546));
    map.insert((132, 91), (223, "Pa", 223, 023962.232));
    map.insert((131, 92), (223, "U ", 223, 027737.168));
-   map.insert((139, 85), (224, "At", 224, 029749.000));
+   map.insert((139, 85), (224, "At", 224, 29_749.0));
    map.insert((138, 86), (224, "Rn", 224, 024095.804));
    map.insert((137, 87), (224, "Fr", 224, 023348.100));
    map.insert((136, 88), (224, "Ra", 224, 020210.453));
@@ -2384,7 +2385,7 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((143, 86), (229, "Rn", 229, 042257.276));
    map.insert((142, 87), (229, "Fr", 229, 038291.455));
    map.insert((141, 88), (229, "Ra", 229, 034956.707));
-   map.insert((140, 89), (229, "Ac", 229, 032947.000));
+   map.insert((140, 89), (229, "Ac", 229, 32_947.0));
    map.insert((139, 90), (229, "Th", 229, 031761.431));
    map.insert((138, 91), (229, "Pa", 229, 032095.652));
    map.insert((137, 92), (229, "U ", 229, 033505.909));
@@ -2393,7 +2394,7 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((134, 95), (229, "Am", 229, 045249.909));
    map.insert((143, 87), (230, "Fr", 230, 042390.791));
    map.insert((142, 88), (230, "Ra", 230, 037054.780));
-   map.insert((141, 89), (230, "Ac", 230, 036327.000));
+   map.insert((141, 89), (230, "Ac", 230, 36_327.0));
    map.insert((140, 90), (230, "Th", 230, 033132.358));
    map.insert((139, 91), (230, "Pa", 230, 034539.789));
    map.insert((138, 92), (230, "U ", 230, 033940.102));
@@ -2401,7 +2402,7 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((136, 94), (230, "Pu", 230, 039650.703));
    map.insert((144, 87), (231, "Fr", 231, 045175.357));
    map.insert((143, 88), (231, "Ra", 231, 041027.086));
-   map.insert((142, 89), (231, "Ac", 231, 038393.000));
+   map.insert((142, 89), (231, "Ac", 231, 38_393.0));
    map.insert((141, 90), (231, "Th", 231, 036302.853));
    map.insert((140, 91), (231, "Pa", 231, 035882.575));
    map.insert((139, 92), (231, "U ", 231, 036292.252));
@@ -2409,14 +2410,14 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((137, 94), (231, "Pu", 231, 041126.410));
    map.insert((145, 87), (232, "Fr", 232, 049461.224));
    map.insert((144, 88), (232, "Ra", 232, 043475.270));
-   map.insert((143, 89), (232, "Ac", 232, 042034.000));
+   map.insert((143, 89), (232, "Ac", 232, 42_034.0));
    map.insert((142, 90), (232, "Th", 232, 038053.689));
    map.insert((141, 91), (232, "Pa", 232, 038590.300));
    map.insert((140, 92), (232, "U ", 232, 037154.860));
    map.insert((138, 94), (232, "Pu", 232, 041184.526));
    map.insert((146, 87), (233, "Fr", 233, 052517.838));
    map.insert((145, 88), (233, "Ra", 233, 047594.573));
-   map.insert((144, 89), (233, "Ac", 233, 044346.000));
+   map.insert((144, 89), (233, "Ac", 233, 44_346.0));
    map.insert((143, 90), (233, "Th", 233, 041580.208));
    map.insert((142, 91), (233, "Pa", 233, 040246.605));
    map.insert((141, 92), (233, "U ", 233, 039634.367));
@@ -2424,35 +2425,35 @@ pub fn excitation_levels_nndc() -> HashMap<(u32, u32), (u32, &'static str, i32, 
    map.insert((139, 94), (233, "Pu", 233, 042997.345));
    map.insert((137, 96), (233, "Cm", 233, 050772.206));
    map.insert((146, 88), (234, "Ra", 234, 050382.104));
-   map.insert((145, 89), (234, "Ac", 234, 048139.000));
+   map.insert((145, 89), (234, "Ac", 234, 48_139.0));
    map.insert((144, 90), (234, "Th", 234, 043599.860));
    map.insert((143, 91), (234, "Pa", 234, 043305.615));
    map.insert((142, 92), (234, "U ", 234, 040950.370));
    map.insert((141, 93), (234, "Np", 234, 042893.320));
    map.insert((140, 94), (234, "Pu", 234, 043317.478));
    map.insert((138, 96), (234, "Cm", 234, 050160.959));
-   map.insert((146, 89), (235, "Ac", 235, 050840.000));
-   map.insert((145, 90), (235, "Th", 235, 047255.000));
-   map.insert((144, 91), (235, "Pa", 235, 045399.000));
+   map.insert((146, 89), (235, "Ac", 235, 50_840.0));
+   map.insert((145, 90), (235, "Th", 235, 47_255.0));
+   map.insert((144, 91), (235, "Pa", 235, 45_399.0));
    map.insert((143, 92), (235, "U ", 235, 043928.190));
    map.insert((142, 93), (235, "Np", 235, 044061.591));
    map.insert((141, 94), (235, "Pu", 235, 045284.682));
    map.insert((140, 95), (235, "Am", 235, 047907.371));
-   map.insert((147, 89), (236, "Ac", 236, 054988.000));
-   map.insert((146, 90), (236, "Th", 236, 049657.000));
-   map.insert((145, 91), (236, "Pa", 236, 048668.000));
+   map.insert((147, 89), (236, "Ac", 236, 54_988.0));
+   map.insert((146, 90), (236, "Th", 236, 49_657.0));
+   map.insert((145, 91), (236, "Pa", 236, 48_668.0));
    map.insert((144, 92), (236, "U ", 236, 045566.201));
    map.insert((143, 93), (236, "Np", 236, 046568.392));
    map.insert((142, 94), (236, "Pu", 236, 046056.756));
    map.insert((140, 96), (236, "Cm", 236, 051374.506));
-   map.insert((147, 90), (237, "Th", 237, 053629.000));
-   map.insert((146, 91), (237, "Pa", 237, 051023.000));
+   map.insert((147, 90), (237, "Th", 237, 53_629.0));
+   map.insert((146, 91), (237, "Pa", 237, 51_023.0));
    map.insert((145, 92), (237, "U ", 237, 048728.380));
    map.insert((144, 93), (237, "Np", 237, 048171.710));
    map.insert((143, 94), (237, "Pu", 237, 048407.957));
    map.insert((141, 96), (237, "Cm", 237, 052868.923));
    map.insert((139, 98), (237, "Cf", 237, 062199.993));
-   map.insert((147, 91), (238, "Pa", 238, 054637.000));
+   map.insert((147, 91), (238, "Pa", 238, 54_637.0));
    map.insert((146, 92), (238, "U ", 238, 050786.996));
    map.insert((145, 93), (238, "Np", 238, 050944.671));
    map.insert((144, 94), (238, "Pu", 238, 049558.250));

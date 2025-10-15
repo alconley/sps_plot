@@ -45,7 +45,7 @@ pub struct Reaction {
 
 impl Reaction {
     pub fn new(color: egui::Color32) -> Self {
-        Reaction {
+        Self {
             color,
             ..Default::default()
         }
@@ -53,7 +53,7 @@ impl Reaction {
 
     pub fn excitation_levels_ui(&mut self, ui: &mut egui::Ui, index: usize) {
         egui::ScrollArea::vertical()
-            .id_source(format!("Reaction {index} Scroll Area"))
+            .id_salt(format!("Reaction {index} Scroll Area"))
             .show(ui, |ui| {
                 // ui.vertical(|ui| {
 
@@ -93,7 +93,7 @@ impl Reaction {
                             .prefix("Custom: ")
                             .suffix(" MeV")
                             .speed(0.1)
-                            .clamp_range(0.0..=f64::MAX),
+                            .range(0.0..=f64::MAX),
                     );
                     if ui.button("+").clicked() {
                         self.additional_excitation_levels
@@ -148,7 +148,7 @@ impl Reaction {
         }
     }
 
-    pub fn draw(&self, plot_ui: &mut egui_plot::PlotUi, y_offset: f64) {
+    pub fn draw(&self, plot_ui: &mut egui_plot::PlotUi<'_>, y_offset: f64) {
         let color = self.color;
 
         let mut bars = Vec::new();
@@ -157,7 +157,7 @@ impl Reaction {
                 orientation: Orientation::Vertical,
                 argument: *rho,
                 value: 0.50,
-                bar_width: 0.01,
+                bar_width: 0.1,
                 fill: color,
                 stroke: Stroke::new(1.0, color),
                 name: format!("E = {:.3} MeV\nrho = {:.3}\n", *excitation, *rho),
@@ -167,7 +167,7 @@ impl Reaction {
             bars.push(bar);
         }
 
-        let barchart = BarChart::new(bars)
+        let barchart = BarChart::new(self.reaction_identifier.clone(), bars)
             .name(self.reaction_identifier.clone())
             .color(color)
             .highlight(true);
@@ -175,7 +175,7 @@ impl Reaction {
         plot_ui.bar_chart(barchart);
     }
 
-    fn populate_reaction_data(reaction: &mut Reaction) {
+    fn populate_reaction_data(reaction: &mut Self) {
         reaction.resid_z = reaction.target_z + reaction.projectile_z - reaction.ejectile_z;
         reaction.resid_a = reaction.target_a + reaction.projectile_a - reaction.ejectile_a;
 
@@ -208,10 +208,10 @@ impl Reaction {
                 .map_or("None", |data| &data.isotope)
         );
 
-        info!("Reaction: {:?}", reaction);
+        info!("Reaction: {reaction:?}");
     }
 
-    fn fetch_excitation_levels(reaction: &mut Reaction) {
+    fn fetch_excitation_levels(reaction: &mut Self) {
         let isotope = reaction
             .resid_data
             .as_ref()
@@ -226,7 +226,7 @@ impl Reaction {
         let excitation_levels = ExcitationLevels::new();
 
         if let Some(levels) = excitation_levels.get(isotope) {
-            log::info!("Excitation levels for {}: {:?}", isotope, levels);
+            log::info!("Excitation levels for {isotope}: {levels:?}");
             // check the last level, if it is less than the one before it remove it
             if let Some(last_level) = levels.last() {
                 if levels.len() > 1 && last_level < &levels[levels.len() - 2] {
@@ -296,7 +296,7 @@ impl SPSPlotApp {
 
     fn sps_settings_ui(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
-            egui::global_dark_light_mode_switch(ui);
+            egui::widgets::global_theme_preference_switch(ui);
 
             ui.heading("SE-SPS Settings");
         });
@@ -307,21 +307,21 @@ impl SPSPlotApp {
             ui.add(
                 egui::DragValue::new(&mut self.sps_angle)
                     .suffix("°")
-                    .clamp_range(0.0..=60.0),
+                    .range(0.0..=60.0),
             );
 
             ui.label("Beam Energy: ");
             ui.add(
                 egui::DragValue::new(&mut self.beam_energy)
                     .suffix(" MeV")
-                    .clamp_range(0.0..=f64::MAX),
+                    .range(0.0..=f64::MAX),
             );
 
             ui.label("Magnetic Field: ");
             ui.add(
                 egui::DragValue::new(&mut self.magnetic_field)
                     .suffix(" kG")
-                    .clamp_range(0.0..=17.0),
+                    .range(0.0..=17.0),
             );
 
             ui.label("Rho Min: ")
@@ -329,7 +329,7 @@ impl SPSPlotApp {
             ui.add(
                 egui::DragValue::new(&mut self.rho_min)
                     .suffix(" cm")
-                    .clamp_range(0.0..=f64::MAX),
+                    .range(0.0..=f64::MAX),
             );
 
             ui.label("Rho Max: ")
@@ -337,7 +337,7 @@ impl SPSPlotApp {
             ui.add(
                 egui::DragValue::new(&mut self.rho_max)
                     .suffix(" cm")
-                    .clamp_range(0.0..=f64::MAX),
+                    .range(0.0..=f64::MAX),
             );
 
             ui.separator();
@@ -433,16 +433,16 @@ impl SPSPlotApp {
             "{}({},{}){}",
             target.isotope, projectile.isotope, ejectile.isotope, resid.isotope
         );
-        info!("Reaction: {}", reaction_identifier);
+        info!("Reaction: {reaction_identifier}");
 
         let q_value = target.mass + projectile.mass - ejectile.mass - resid.mass;
 
         let mut levels = reaction.excitation_levels.clone();
-        for level in reaction.additional_excitation_levels.iter() {
+        for level in &reaction.additional_excitation_levels {
             levels.push(*level);
         }
 
-        log::info!("Excitation levels: {:?}", levels);
+        log::info!("Excitation levels: {levels:?}");
 
         for excitation in levels {
             // for excitation in &reaction.excitation_levels {
@@ -469,7 +469,7 @@ impl SPSPlotApp {
             let p = (ejectile_energy * (ejectile_energy + 2.0 * ejectile.mass)).sqrt();
             let qbrho = p / QBRHO2P;
             let rho = qbrho / (magnetic_field * ejectile.z as f64);
-            info!("Excitation: {}, rho: {}", excitation, rho);
+            info!("Excitation: {excitation}, rho: {rho}");
 
             reaction.rho_values.push((excitation, rho));
         }
@@ -511,8 +511,8 @@ impl SPSPlotApp {
 
         plot.show(ui, |plot_ui| {
             // plots the rho values
-            plot_ui.vline(VLine::new(self.rho_min).color(Color32::RED));
-            plot_ui.vline(VLine::new(self.rho_max).color(Color32::RED));
+            plot_ui.vline(VLine::new("", self.rho_min).color(Color32::RED));
+            plot_ui.vline(VLine::new("", self.rho_max).color(Color32::RED));
 
             for (index, reaction) in self.reactions.iter_mut().enumerate() {
                 let y_value = index as f64 + 0.25;

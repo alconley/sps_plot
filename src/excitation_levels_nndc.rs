@@ -36,7 +36,7 @@ impl ExcitationLevels {
 // i couldnt figure out how to get a text file when compiling to the web
 
 #[rustfmt::skip]
-#[allow(clippy::all)]
+#[expect(clippy::all)]
 pub fn excitation_levels_nndc_1() -> HashMap<&'static str, Vec<f32>> {
     let mut map = HashMap::new();
 
@@ -496,7 +496,7 @@ pub fn excitation_levels_nndc_1() -> HashMap<&'static str, Vec<f32>> {
 }
 
 #[rustfmt::skip]
-#[allow(clippy::all)]
+#[expect(clippy::all)]
 pub fn excitation_levels_nndc_2() -> HashMap<&'static str, Vec<f32>> {
     let mut map = HashMap::new();
     
@@ -957,7 +957,7 @@ pub fn excitation_levels_nndc_2() -> HashMap<&'static str, Vec<f32>> {
 }
 
 #[rustfmt::skip]
-#[allow(clippy::all)]
+#[expect(clippy::all)]
 pub fn excitation_levels_nndc_3() -> HashMap<&'static str, Vec<f32>> {
     let mut map = HashMap::new();
     
@@ -1064,7 +1064,7 @@ pub fn excitation_levels_nndc_3() -> HashMap<&'static str, Vec<f32>> {
 }
 
 #[rustfmt::skip]
-#[allow(clippy::all)] 
+#[expect(clippy::all)] 
 pub fn excitation_levels_nndc_4() -> HashMap<&'static str, Vec<f32>> {
     let mut map = HashMap::new();
 
@@ -1415,7 +1415,7 @@ pub fn excitation_levels_nndc_4() -> HashMap<&'static str, Vec<f32>> {
 }
 
 #[rustfmt::skip]
-#[allow(clippy::all)]
+#[expect(clippy::all)]
 pub fn excitation_levels_nndc_5() -> HashMap<&'static str, Vec<f32>> {
     let mut map = HashMap::new();
 
@@ -1532,7 +1532,7 @@ pub fn excitation_levels_nndc_5() -> HashMap<&'static str, Vec<f32>> {
 }
 
 #[rustfmt::skip]
-#[allow(clippy::all)]
+#[expect(clippy::all)]
 pub fn excitation_levels_nndc_6() -> HashMap<&'static str, Vec<f32>> {
     let mut map = HashMap::new();
     
@@ -1875,7 +1875,7 @@ pub fn excitation_levels_nndc_6() -> HashMap<&'static str, Vec<f32>> {
 }
 
 #[rustfmt::skip]
-#[allow(clippy::all)]
+#[expect(clippy::all)]
 pub fn excitation_levels_nndc_7() -> HashMap<&'static str, Vec<f32>> {
     let mut map = HashMap::new();
     
@@ -2001,7 +2001,7 @@ pub fn excitation_levels_nndc_7() -> HashMap<&'static str, Vec<f32>> {
 }
 
 #[rustfmt::skip]
-#[allow(clippy::all)]
+#[expect(clippy::all)]
 pub fn excitation_levels_nndc_8() -> HashMap<&'static str, Vec<f32>> {
     let mut map = HashMap::new();
 
@@ -2461,7 +2461,7 @@ pub fn excitation_levels_nndc_8() -> HashMap<&'static str, Vec<f32>> {
 }
 
 #[rustfmt::skip]
-#[allow(clippy::all)]
+#[expect(clippy::all)]
 pub fn excitation_levels_nndc_9() -> HashMap<&'static str, Vec<f32>> {
     let mut map = HashMap::new();
 
