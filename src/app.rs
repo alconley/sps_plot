@@ -157,7 +157,7 @@ impl Reaction {
                 orientation: Orientation::Vertical,
                 argument: *rho,
                 value: 0.50,
-                bar_width: 0.1,
+                bar_width: 0.01,
                 fill: color,
                 stroke: Stroke::new(1.0, color),
                 name: format!("E = {:.3} MeV\nrho = {:.3}\n", *excitation, *rho),
