@@ -148,7 +148,7 @@ impl Reaction {
         }
     }
 
-    pub fn draw(&self, plot_ui: &mut egui_plot::PlotUi<'_>, y_offset: f64) {
+    pub fn draw(&self, plot_ui: &mut egui_plot::PlotUi<'_>, y_offset: f64, bar_width: f64) {
         let color = self.color;
 
         let mut bars = Vec::new();
@@ -157,7 +157,7 @@ impl Reaction {
                 orientation: Orientation::Vertical,
                 argument: *rho,
                 value: 0.50,
-                bar_width: 0.01,
+                bar_width,
                 fill: color,
                 stroke: Stroke::new(1.0, color),
                 name: format!("E = {:.3} MeV\nrho = {:.3}\n", *excitation, *rho),
@@ -249,6 +249,7 @@ pub struct SPSPlotApp {
     sps_angle: f64,
     beam_energy: f64,
     magnetic_field: f64,
+    bar_width: f64,
     rho_min: f64,
     rho_max: f64,
     reactions: Vec<Reaction>,
@@ -263,6 +264,7 @@ impl Default for SPSPlotApp {
             sps_angle: 35.0,
             beam_energy: 16.0,
             magnetic_field: 8.7,
+            bar_width: 1.0,
             rho_min: 69.0,
             rho_max: 87.0,
             reactions: Vec::new(),
@@ -279,6 +281,7 @@ impl SPSPlotApp {
             sps_angle: 35.0,     // degree
             beam_energy: 16.0,   // MeV
             magnetic_field: 8.7, // kG
+            bar_width: 1.0,
             rho_min: 69.0,
             rho_max: 87.0,
             reactions: Vec::new(),
@@ -349,6 +352,8 @@ impl SPSPlotApp {
             ui.separator();
 
             ui.checkbox(&mut self.side_panel, "Show Exciation Levels");
+
+            ui.add(egui::Slider::new(&mut self.bar_width, 0.01..=1.00).text("Bar Width"));
         });
     }
 
@@ -516,7 +521,7 @@ impl SPSPlotApp {
 
             for (index, reaction) in self.reactions.iter_mut().enumerate() {
                 let y_value = index as f64 + 0.25;
-                reaction.draw(plot_ui, y_value);
+                reaction.draw(plot_ui, y_value, self.bar_width);
             }
 
             plot_ui.set_plot_bounds(PlotBounds::from_min_max(
