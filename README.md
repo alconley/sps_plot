@@ -19,3 +19,7 @@ On Fedora Rawhide you need to run:
 `dnf install clang clang-devel clang-tools-extra libxkbcommon-devel pkg-config openssl-devel libxcb-devel gtk3-devel atk fontconfig-devel`
 
 To run the program online visit [sps_plot](https://alconley.github.io/sps_plot)
+
+
+### Note
+If the program is updated and you have previously used sps_plot, you will need to clear your cookies in order to see the updated version.
