@@ -264,7 +264,7 @@ impl Default for SPSPlotApp {
             sps_angle: 35.0,
             beam_energy: 16.0,
             magnetic_field: 8.7,
-            bar_width: 1.0,
+            bar_width: 0.03,
             rho_min: 69.0,
             rho_max: 87.0,
             reactions: Vec::new(),
