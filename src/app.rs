@@ -26,6 +26,7 @@ pub struct Reaction {
 
     pub ejectile_z: i32,
     pub ejectile_a: i32,
+    pub adjust_qs: bool,
     pub ejectile_qs: i32,
     pub ejectile_data: Option<NuclearData>,
 
@@ -40,6 +41,7 @@ pub struct Reaction {
     pub additional_excitation_levels: Vec<f64>,
 
     pub rho_values: Vec<(f64, f64)>,
+    pub reaction_changed: bool,
 
     pub color: Color32,
 }
@@ -48,6 +50,7 @@ impl Reaction {
     pub fn new(color: egui::Color32) -> Self {
         Self {
             color,
+            reaction_changed: false,
             ..Default::default()
         }
     }
@@ -56,8 +59,6 @@ impl Reaction {
         egui::ScrollArea::vertical()
             .id_salt(format!("Reaction {index} Scroll Area"))
             .show(ui, |ui| {
-                // ui.vertical(|ui| {
-
                 ui.label(self.reaction_identifier.clone());
                 ui.horizontal(|ui| {
                     ui.label("Color: ");
@@ -118,33 +119,99 @@ impl Reaction {
                         self.additional_excitation_levels.remove(index);
                     }
                 }
-                // });
             });
     }
 
     pub fn settings_ui(&mut self, ui: &mut egui::Ui) {
+        let mut changed = false;
+
         ui.label("Target: ");
-        ui.add(egui::DragValue::new(&mut self.target_z).prefix("Z: "));
-        ui.add(egui::DragValue::new(&mut self.target_a).prefix("A: "));
+        changed |= ui
+            .add(
+                egui::DragValue::new(&mut self.target_z)
+                    .range(1..=116)
+                    .prefix("Z: "),
+            )
+            .changed();
+
+        changed |= ui
+            .add(
+                egui::DragValue::new(&mut self.target_a)
+                    .range(1..=294)
+                    .prefix("A: "),
+            )
+            .changed();
 
         ui.separator();
 
         ui.label("Projectile: ");
-        ui.add(egui::DragValue::new(&mut self.projectile_z).prefix("Z: "));
-        ui.add(egui::DragValue::new(&mut self.projectile_a).prefix("A: "));
+        changed |= ui
+            .add(
+                egui::DragValue::new(&mut self.projectile_z)
+                    .range(1..=116)
+                    .prefix("Z: "),
+            )
+            .changed();
+        changed |= ui
+            .add(
+                egui::DragValue::new(&mut self.projectile_a)
+                    .range(1..=294)
+                    .prefix("A: "),
+            )
+            .changed();
 
         ui.separator();
 
         ui.label("Ejectile: ");
-        ui.add(egui::DragValue::new(&mut self.ejectile_z).prefix("Z: "));
-        ui.add(egui::DragValue::new(&mut self.ejectile_a).prefix("A: "));
-        ui.add(egui::DragValue::new(&mut self.ejectile_qs).prefix("QS: "));
+        changed |= ui
+            .add(
+                egui::DragValue::new(&mut self.ejectile_z)
+                    .range(1..=116)
+                    .prefix("Z: "),
+            )
+            .changed();
+        changed |= ui
+            .add(
+                egui::DragValue::new(&mut self.ejectile_a)
+                    .range(1..=294)
+                    .prefix("A: "),
+            )
+            .changed();
+
+        changed |= ui.add(egui::Checkbox::new(&mut self.adjust_qs, "Adjust QS"))
+            .on_hover_text("If checked, the charge value will be adjusted based on the ejectile's charge state instead of its Z.")
+            .changed();
+
+        if self.adjust_qs {
+            changed |= ui
+                .add(
+                    egui::DragValue::new(&mut self.ejectile_qs)
+                        .range(1..=self.ejectile_z)
+                        .prefix("QS: "),
+                )
+                .changed();
+        } else {
+            // If this assignment changes the value, count it as a change too:
+            let new_qs = self.ejectile_z;
+            if self.ejectile_qs != new_qs {
+                self.ejectile_qs = new_qs;
+                changed = true;
+            }
+        }
 
         ui.separator();
 
         ui.label(self.reaction_identifier.to_string());
 
-        if ui.button("Get Reaction").clicked() {
+        // still allow manual refresh
+        // let clicked = ui.button("Get Reaction").clicked();
+        // if changed || clicked {
+        //     Self::populate_reaction_data(self);
+        //     Self::fetch_excitation_levels(self);
+        // }
+
+        if changed {
+            self.reaction_changed = true;
             Self::populate_reaction_data(self);
             Self::fetch_excitation_levels(self);
         }
@@ -190,28 +257,32 @@ impl Reaction {
         reaction.resid_data =
             NuclearData::get_data(reaction.resid_z as u32, reaction.resid_a as u32);
 
-        reaction.reaction_identifier = format!(
-            "{}({},{}({}+)){}",
-            reaction
-                .target_data
-                .as_ref()
-                .map_or("None", |data| &data.isotope),
-            reaction
-                .projectile_data
-                .as_ref()
-                .map_or("None", |data| &data.isotope),
-            reaction
-                .ejectile_data
-                .as_ref()
-                .map_or("None", |data| &data.isotope),
-            reaction
-                .ejectile_qs,
-                //.map_or("None", |data| &data.isotope),
-            reaction
-                .resid_data
-                .as_ref()
-                .map_or("None", |data| &data.isotope)
-        );
+        let target = reaction
+            .target_data
+            .as_ref()
+            .map_or("None", |d| d.isotope.as_str());
+        let proj = reaction
+            .projectile_data
+            .as_ref()
+            .map_or("None", |d| d.isotope.as_str());
+        let ejec = reaction
+            .ejectile_data
+            .as_ref()
+            .map_or("None", |d| d.isotope.as_str());
+        let resid = reaction
+            .resid_data
+            .as_ref()
+            .map_or("None", |d| d.isotope.as_str());
+
+        let ejectile_part = if reaction.adjust_qs {
+            // include charge state when QS mode is enabled
+            format!("{ejec}({}+)", reaction.ejectile_qs)
+        } else {
+            // normal: no QS annotation
+            ejec.to_string()
+        };
+
+        reaction.reaction_identifier = format!("{target}({proj},{ejectile_part}){resid}");
 
         info!("Reaction: {reaction:?}");
     }
@@ -222,7 +293,7 @@ impl Reaction {
             .as_ref()
             .map_or("None", |data| &data.isotope);
         if isotope == "None" {
-            log::error!(
+            log::warn!(
                 "No isotope found for reaction: {}",
                 reaction.reaction_identifier
             );
@@ -305,59 +376,86 @@ impl SPSPlotApp {
     fn sps_settings_ui(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             egui::widgets::global_theme_preference_switch(ui);
-
             ui.heading("SE-SPS Settings");
         });
 
         ui.horizontal(|ui| {
+            let mut changed = false;
+
+            // loop through reactions and if any of them have reaction_changed = true, set changed to true and reset their reaction_changed to false
+            for reaction in &mut self.reactions {
+                if reaction.reaction_changed {
+                    changed = true;
+                    reaction.reaction_changed = false;
+                }
+            }
+
             ui.label("SPS Angle: ")
                 .on_hover_text("SE-SPS's angle currently limited to 60°");
-            ui.add(
-                egui::DragValue::new(&mut self.sps_angle)
-                    .suffix("°")
-                    .range(0.0..=60.0),
-            );
+            changed |= ui
+                .add(
+                    egui::DragValue::new(&mut self.sps_angle)
+                        .suffix("°")
+                        .speed(0.5)
+                        .range(0.0..=60.0),
+                )
+                .changed();
 
             ui.label("Beam Energy: ");
-            ui.add(
-                egui::DragValue::new(&mut self.beam_energy)
-                    .suffix(" MeV")
-                    .range(0.0..=f64::MAX),
-            );
+            changed |= ui
+                .add(
+                    egui::DragValue::new(&mut self.beam_energy)
+                        .suffix(" MeV")
+                        .speed(0.5)
+                        .range(0.00..=f64::MAX),
+                )
+                .changed();
 
             ui.label("Magnetic Field: ");
-            ui.add(
-                egui::DragValue::new(&mut self.magnetic_field)
-                    .suffix(" kG")
-                    .range(0.0..=17.0),
-            );
+            changed |= ui
+                .add(
+                    egui::DragValue::new(&mut self.magnetic_field)
+                        .suffix(" kG")
+                        .speed(0.001)
+                        .range(0.000..=17.000),
+                )
+                .changed();
 
             ui.label("Rho Min: ")
                 .on_hover_text("SE-SPS Rho Min is usually 69.0");
-            ui.add(
-                egui::DragValue::new(&mut self.rho_min)
-                    .suffix(" cm")
-                    .range(0.0..=f64::MAX),
-            );
+            changed |= ui
+                .add(
+                    egui::DragValue::new(&mut self.rho_min)
+                        .suffix(" cm")
+                        .speed(0.1)
+                        .range(0.00..=f64::MAX),
+                )
+                .changed();
 
             ui.label("Rho Max: ")
                 .on_hover_text("SE-SPS Rho Max is usually 87.0");
-            ui.add(
-                egui::DragValue::new(&mut self.rho_max)
-                    .suffix(" cm")
-                    .range(0.0..=f64::MAX),
-            );
+            changed |= ui
+                .add(
+                    egui::DragValue::new(&mut self.rho_max)
+                        .suffix(" cm")
+                        .speed(0.1)
+                        .range(0.00..=f64::MAX),
+                )
+                .changed();
 
-            ui.separator();
+            // button if needed
+            // let clicked = ui.button("Calculate").clicked();
+            // if clicked || changed {
+            //     self.calculate_rho_for_all_reactions();
+            // }
 
-            if ui.button("Calculate").clicked() {
+            if changed {
                 self.calculate_rho_for_all_reactions();
             }
 
             ui.separator();
 
             ui.checkbox(&mut self.side_panel, "Show Exciation Levels");
-
             ui.add(egui::Slider::new(&mut self.bar_width, 0.01..=1.00).text("Bar Width"));
         });
     }
@@ -365,14 +463,6 @@ impl SPSPlotApp {
     fn reactions_ui(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             ui.heading("Reactions");
-
-            ui.separator();
-
-            if ui.button("Calculate").clicked() {
-                self.calculate_rho_for_all_reactions();
-            }
-
-            ui.separator();
 
             if ui.button("+").clicked() {
                 let colors = [
@@ -434,15 +524,31 @@ impl SPSPlotApp {
     ) {
         reaction.rho_values.clear();
 
-        let target = reaction.target_data.as_ref().unwrap();
-        let projectile = reaction.projectile_data.as_ref().unwrap();
-        let ejectile = reaction.ejectile_data.as_ref().unwrap();
-        let resid = reaction.resid_data.as_ref().unwrap();
+        let (target, projectile, ejectile, resid) = match (
+            reaction.target_data.as_ref(),
+            reaction.projectile_data.as_ref(),
+            reaction.ejectile_data.as_ref(),
+            reaction.resid_data.as_ref(),
+        ) {
+            (Some(t), Some(p), Some(e), Some(r)) => (t, p, e, r),
+            _ => {
+                // optional: log why you skipped
+                log::warn!("excitation_level_to_rho skipped: missing reaction nuclear data");
+                return;
+            }
+        };
+
+        let ejectile_part = if reaction.adjust_qs {
+            format!("{}({}+)", ejectile.isotope, reaction.ejectile_qs)
+        } else {
+            ejectile.isotope.to_string()
+        };
 
         let reaction_identifier = format!(
             "{}({},{}){}",
-            target.isotope, projectile.isotope, ejectile.isotope, resid.isotope
+            target.isotope, projectile.isotope, ejectile_part, resid.isotope
         );
+
         info!("Reaction: {reaction_identifier}");
 
         let q_value = target.mass + projectile.mass - ejectile.mass - resid.mass;
@@ -455,10 +561,7 @@ impl SPSPlotApp {
         log::info!("Excitation levels: {levels:?}");
 
         for excitation in levels {
-            // for excitation in &reaction.excitation_levels {
-
             let reaction_q_value = q_value - excitation;
-            // let beam_reaction_energy = self.beam_energy; // could put energy loss through target here
             let beam_reaction_energy = beam_energy; // could put energy loss through target here
 
             let _threshold = -reaction_q_value * (ejectile.mass + resid.mass)
@@ -537,92 +640,6 @@ impl SPSPlotApp {
         });
     }
 
-    // pub fn find_p_t_ground_state_matches(&mut self) {
-    //     use crate::nuclear_data_amdc_2016::{NuclearData, excitation_levels_nndc};
-
-    //     // Clear any previous reactions.
-    //     self.reactions.clear();
-
-    //     // (p,t) reaction settings.
-    //     let projectile_z = 1;
-    //     let projectile_a = 1;
-    //     let ejectile_z = 1;
-    //     let ejectile_a = 3;
-
-    //     // Predefined set of colors.
-    //     let colors = [
-    //         Color32::from_rgb(120, 47, 64),
-    //         Color32::from_rgb(206, 184, 136),
-    //         Color32::BLUE,
-    //         Color32::GREEN,
-    //         Color32::YELLOW,
-    //         Color32::BROWN,
-    //         Color32::DARK_RED,
-    //         Color32::RED,
-    //         Color32::LIGHT_RED,
-    //         Color32::LIGHT_YELLOW,
-    //         Color32::KHAKI,
-    //         Color32::DARK_GREEN,
-    //         Color32::LIGHT_GREEN,
-    //         Color32::DARK_BLUE,
-    //         Color32::LIGHT_BLUE,
-    //     ];
-    //     let mut color_index = 0;
-
-    //     // Get the HashMap from your nuclear data function.
-    //     let isotopes = excitation_levels_nndc();
-
-    //     // Loop through each isotope.
-    //     for (&(_n, z), &(a, _el, _atomic_mass_base, _atomic_mass_micro_u)) in isotopes.iter() {
-    //         if a < z {
-    //             continue;
-    //         }
-    //         if let Some(target_data) = NuclearData::get_data(z, a) {
-    //             // Create a new reaction with a different color.
-    //             let mut reaction = Reaction::new(colors[color_index % colors.len()]);
-    //             color_index += 1;
-
-    //             // Set target and (p,t) projectile/ejectile values.
-    //             reaction.target_z = target_data.z as i32;
-    //             reaction.target_a = target_data.a as i32;
-    //             reaction.projectile_z = projectile_z;
-    //             reaction.projectile_a = projectile_a;
-    //             reaction.ejectile_z = ejectile_z;
-    //             reaction.ejectile_a = ejectile_a;
-
-    //             // Populate the rest of the nuclear data.
-    //             Reaction::populate_reaction_data(&mut reaction);
-
-    //             // Skip if we don't have residual nuclear data.
-    //             if reaction.resid_data.is_none() {
-    //                 log::warn!("Skipping target {} due to missing residual data.", target_data.isotope);
-    //                 continue;
-    //             }
-
-    //             // Fetch excitation levels without overriding them.
-    //             Reaction::fetch_excitation_levels(&mut reaction);
-
-    //             // Calculate rho values for every excitation level.
-    //             Self::excitation_level_to_rho(
-    //                 &mut reaction,
-    //                 self.beam_energy,
-    //                 self.magnetic_field,
-    //                 self.sps_angle,
-    //             );
-
-    //             // Check if the ground state (0.0 MeV) is present and its rho is within range.
-    //             if reaction.rho_values.iter().any(|(ex, rho)|
-    //                 (*ex - 0.0).abs() < 1e-6 && *rho >= self.rho_min && *rho <= self.rho_max
-    //             ) {
-    //                 log::info!("✅ Added reaction: {} | ground state rho in range", reaction.reaction_identifier);
-    //                 self.reactions.push(reaction);
-    //             } else {
-    //                 log::info!("❌ Skipped reaction: {} | ground state rho not in range", reaction.reaction_identifier);
-    //             }
-    //         }
-    //     }
-    // }
-
     fn ui(&mut self, ui: &mut egui::Ui) {
         egui::TopBottomPanel::top("sps_plot_top_panel").show_inside(ui, |ui| {
             egui::ScrollArea::horizontal().show(ui, |ui| {
@@ -634,10 +651,6 @@ impl SPSPlotApp {
             .resizable(true)
             .show_inside(ui, |ui| {
                 self.reactions_ui(ui);
-
-                // if ui.button("Find p-t Ground State Matches").clicked() {
-                //     self.find_p_t_ground_state_matches();
-                // }
             });
 
         egui::SidePanel::left("sps_plot_side_panel").show_animated_inside(
