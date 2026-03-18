@@ -26,6 +26,8 @@ egui_plot = "0.34.0"
 
 egui_extras = "0.33.0"
 
+image = "0.25"
+
 # Conditional dependencies for native and wasm targets
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 env_logger = "0.11.8"

@@ -1,6 +1,20 @@
 #![warn(clippy::all, rust_2018_idioms)]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
+fn load_icon(bytes: &[u8]) -> egui::IconData {
+    let image = image::load_from_memory(bytes)
+        .expect("Failed to decode icon")
+        .to_rgba8();
+
+    let resized = image::imageops::resize(&image, 64, 64, image::imageops::FilterType::Lanczos3);
+
+    egui::IconData {
+        rgba: resized.into_raw(),
+        width: 64,
+        height: 64,
+    }
+}
+
 // When compiling natively:
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result {
@@ -9,12 +23,8 @@ fn main() -> eframe::Result {
     let native_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([400.0, 300.0])
-            .with_min_inner_size([300.0, 220.0]),
-        // .with_icon(
-        //     // NOTE: Adding an icon is optional
-        //     eframe::icon_data::from_png_bytes(&include_bytes!("../assets/icon-256.png")[..])
-        //         .expect("Failed to load icon"),
-        // ),
+            .with_min_inner_size([300.0, 220.0])
+            .with_icon(load_icon(include_bytes!("../assets/icon-256.png"))),
         ..Default::default()
     };
     eframe::run_native(
