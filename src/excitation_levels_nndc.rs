@@ -22,6 +22,8 @@ impl ExcitationLevels {
     }
 
     pub fn get(&self, isotope: &str) -> Option<Vec<f64>> {
+        // remove any whitespace from the isotope string
+        let isotope = isotope.trim();
         for dataset in &self.levels {
             if let Some(levels) = dataset.get(isotope) {
                 return Some(levels.iter().map(|&x| x as f64).collect());
